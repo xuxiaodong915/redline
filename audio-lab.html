@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>TT // Engine Audio Lab</title>
+<style>
+  :root {
+    --bg: #06070a;
+    --panel: #0c0f15;
+    --line: rgba(255, 255, 255, 0.08);
+    --txt: #e8eef7;
+    --dim: #8b98ab;
+    --red: #ff3b30;
+    --hot: #ff7a18;
+    --cyan: #4fe3ff;
+    --green: #3ef2a4;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    padding: clamp(12px, 2.2vw, 26px);
+    color: var(--txt);
+    font-family: var(--sans);
+    background:
+      radial-gradient(1100px 620px at 12% -12%, rgba(255, 59, 48, 0.16), transparent 62%),
+      radial-gradient(900px 520px at 98% -5%, rgba(79, 227, 255, 0.07), transparent 60%),
+      radial-gradient(700px 500px at 60% 120%, rgba(255, 122, 24, 0.06), transparent 65%),
+      var(--bg);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(circle at 50% 18%, #000 0%, transparent 76%);
+    mask-image: radial-gradient(circle at 50% 18%, #000 0%, transparent 76%);
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1180px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  /* ---------------------------------------------------------------- topbar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 4px 2px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-weight: 800;
+    font-size: clamp(13px, 1.6vw, 16px);
+    letter-spacing: 0.14em;
+  }
+
+  .brand .slash { color: var(--red); font-weight: 900; }
+  .brand .sub {
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    color: #78869a;
+    text-transform: uppercase;
+  }
+
+  .statusbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    color: #9fb0c6;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+
+  .pill .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #5c6a7d;
+    box-shadow: 0 0 8px transparent;
+  }
+
+  .pill.live { color: #b8f5d8; border-color: rgba(62, 242, 164, 0.3); }
+  .pill.live .dot { background: var(--green); box-shadow: 0 0 10px var(--green); }
+  .pill.locked { color: #ffd9a8; border-color: rgba(255, 176, 32, 0.3); }
+  .pill.locked .dot { background: #ffb020; box-shadow: 0 0 9px #ffb020; }
+  .pill.paused { color: #ffd2bd; border-color: rgba(255, 122, 24, 0.3); }
+  .pill.paused .dot { background: var(--hot); box-shadow: 0 0 9px var(--hot); }
+  .pill.muted { color: #c3cbd8; }
+  .pill.muted .dot { background: #8b96a7; }
+
+  /* ----------------------------------------------------------------- cards */
+  .card {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+  }
+
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.05), transparent 30%);
+    opacity: 0.5;
+  }
+
+  /* ----------------------------------------------------------------- stage */
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(280px, 450px) minmax(0, 1fr);
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .tachCard {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(255, 80, 40, 0.08), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  }
+
+  #tach {
+    display: block;
+    width: 100%;
+    max-width: 460px;
+    margin: 0 auto;
+    aspect-ratio: 1 / 1;
+    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+  }
+
+  .tachDigits {
+    display: grid;
+    grid-template-columns: 1.25fr 0.8fr 1fr;
+    gap: 8px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+
+  .tachDigits > div {
+    text-align: center;
+    line-height: 1;
+    padding: 2px 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .tachDigits > div:last-child { border-right: 0; }
+
+  .tachDigits b {
+    display: block;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(19px, 3.4vw, 30px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #f2f7ff;
+    text-shadow: 0 0 24px rgba(120, 190, 255, 0.18);
+  }
+
+  .tachDigits #gearText { color: #ffb199; text-shadow: 0 0 24px rgba(255, 90, 40, 0.4); }
+
+  .tachDigits span {
+    display: block;
+    margin-top: 6px;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    color: var(--dim);
+  }
+
+  /* ------------------------------------------------------------- telemetry */
+  .telemetry {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    justify-content: space-between;
+  }
+
+  .teleRow { display: flex; flex-direction: column; gap: 8px; }
+
+  .labelRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+  }
+
+  .labelRow b {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: #dfe9f6;
+  }
+
+  .bar {
+    position: relative;
+    height: 9px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.045);
+    overflow: hidden;
+  }
+
+  .bar > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #ffb020, #ff5a2a 55%, #ff2d20);
+    box-shadow: 0 0 14px rgba(255, 90, 40, 0.55);
+    transition: width 70ms linear;
+  }
+
+  .bar > i.cyan {
+    background: linear-gradient(90deg, #1f8fa8, #4fe3ff);
+    box-shadow: 0 0 14px rgba(79, 227, 255, 0.5);
+    transition: width 110ms linear;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .chip {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    color: #67758a;
+    background: rgba(255, 255, 255, 0.025);
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+  }
+
+  .chip.on {
+    color: #ffd3c6;
+    border-color: rgba(255, 90, 42, 0.6);
+    background: rgba(255, 90, 42, 0.14);
+    box-shadow: 0 0 16px rgba(255, 90, 42, 0.2);
+  }
+
+  .chip.cyan.on {
+    color: #c6f6ff;
+    border-color: rgba(79, 227, 255, 0.55);
+    background: rgba(79, 227, 255, 0.12);
+    box-shadow: 0 0 16px rgba(79, 227, 255, 0.18);
+  }
+
+  .logWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    min-height: 64px;
+  }
+
+  .logLabel {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    color: #5e6b7e;
+  }
+
+  .log {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: #9fe8ff;
+    min-height: 34px;
+    word-break: break-word;
+  }
+
+  .log::before { content: "› "; color: #4b5b70; }
+
+  .teleGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+  }
+
+  .teleGrid > div { display: flex; flex-direction: column; gap: 5px; }
+
+  .teleGrid span {
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: #5e6b7e;
+    text-transform: uppercase;
+  }
+
+  .teleGrid b {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #c3d0e0;
+  }
+
+  /* -------------------------------------------------------------- controls */
+  .controls {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr 0.95fr;
+    gap: 15px;
+    align-items: start;
+  }
+
+  .controlCard {
+    padding: 17px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.26em;
+    color: #97a7bb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-transform: uppercase;
+  }
+
+  h2 .tag {
+    font-size: 8.5px;
+    letter-spacing: 0.16em;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: #ffc2b3;
+    background: rgba(255, 90, 42, 0.13);
+    border: 1px solid rgba(255, 90, 42, 0.28);
+    font-weight: 800;
+  }
+
+  label.slider {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+
+  label.slider .val {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: #cfdcec;
+    letter-spacing: 0;
+    float: right;
+  }
+
+  label.slider .capRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  /* range input */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 26px;
+    background: transparent;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, rgba(255, 59, 48, 0.42), rgba(255, 122, 24, 0.28), rgba(255, 255, 255, 0.07));
+    border: 1px solid rgba(255, 255, 255, 0.055);
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 17px;
+    height: 17px;
+    margin-top: -6.5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #ffe3d4, #ff622f 46%, #8d1b0f);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 13px rgba(255, 90, 40, 0.7);
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 6px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, rgba(255, 59, 48, 0.42), rgba(255, 122, 24, 0.28), rgba(255, 255, 255, 0.07));
+    border: 1px solid rgba(255, 255, 255, 0.055);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #ffe3d4, #ff622f 46%, #8d1b0f);
+    box-shadow: 0 0 13px rgba(255, 90, 40, 0.7);
+  }
+
+  input[type="range"]:disabled { opacity: 0.28; cursor: not-allowed; }
+
+  .toggles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  /* buttons */
+  .btn {
+    appearance: none;
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #dbe6f3;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 11px;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    white-space: nowrap;
+    user-select: none;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.18s, transform 0.07s, color 0.15s;
+  }
+
+  .btn:hover {
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  .btn:active { transform: translateY(1px); }
+
+  .btn:focus-visible { outline: 2px solid rgba(79, 227, 255, 0.7); outline-offset: 2px; }
+
+  .btn.small { height: 30px; padding: 0 11px; font-size: 9.5px; border-radius: 9px; }
+
+  .btn.on {
+    color: #ffd4c6;
+    border-color: rgba(255, 90, 42, 0.62);
+    background: linear-gradient(180deg, rgba(255, 90, 42, 0.24), rgba(255, 90, 42, 0.07));
+    box-shadow: 0 0 18px rgba(255, 90, 42, 0.2), inset 0 0 14px rgba(255, 90, 42, 0.08);
+  }
+
+  .btn.danger {
+    color: #ffb7ae;
+    border-color: rgba(255, 59, 48, 0.4);
+    background: linear-gradient(180deg, rgba(255, 59, 48, 0.17), rgba(255, 59, 48, 0.045));
+  }
+
+  .btn.danger:hover {
+    border-color: rgba(255, 59, 48, 0.7);
+    box-shadow: 0 0 22px rgba(255, 59, 48, 0.25);
+  }
+
+  .btn.big { padding: 14px 12px; font-size: 11px; }
+
+  kbd {
+    font-family: var(--mono);
+    font-size: 8.5px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 4px 5px;
+    border-radius: 4px;
+    color: #9fb0c6;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom-width: 2px;
+  }
+
+  .gears {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .gearBtn {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.035);
+    border-radius: 11px;
+    padding: 13px 0 11px;
+    color: #8f9fb4;
+    font-family: var(--mono);
+    font-size: clamp(16px, 2.4vw, 22px);
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .gearBtn:hover { border-color: rgba(255, 255, 255, 0.26); color: #e8f0fb; }
+
+  .gearBtn.active {
+    color: #fff1ec;
+    border-color: rgba(255, 90, 42, 0.8);
+    background: linear-gradient(180deg, rgba(255, 90, 42, 0.34), rgba(255, 59, 48, 0.1));
+    box-shadow: 0 0 22px rgba(255, 90, 42, 0.34), inset 0 0 12px rgba(255, 90, 42, 0.15);
+    transform: translateY(-1px);
+  }
+
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.5;
+    color: #66748a;
+    letter-spacing: 0.02em;
+  }
+
+  /* ------------------------------------------------------------------- foot */
+  .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 2px 4px 14px;
+    font-size: 10px;
+    color: #5c6a7e;
+    letter-spacing: 0.03em;
+  }
+
+  .foot .keys { font-family: var(--mono); font-size: 9.5px; color: #58667a; }
+  .foot .keys b { color: #8ea0b8; font-weight: 600; }
+
+  /* ---------------------------------------------------------------- overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(46, 12, 8, 0.7), rgba(3, 4, 6, 0.95) 66%);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+
+  .overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .overlayCard { text-align: center; max-width: 560px; }
+
+  .overlayKicker {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.44em;
+    color: #ff7a5c;
+    margin-bottom: 16px;
+  }
+
+  .overlay h1 {
+    margin: 0 0 12px;
+    font-size: clamp(32px, 6.4vw, 62px);
+    font-weight: 800;
+    letter-spacing: 0.015em;
+    line-height: 1.02;
+    background: linear-gradient(180deg, #ffffff, #93a3b9);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .overlay p {
+    margin: 0 auto;
+    max-width: 460px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #93a1b4;
+  }
+
+  .startBtn {
+    margin: 30px auto 18px;
+    width: clamp(150px, 34vw, 190px);
+    height: clamp(150px, 34vw, 190px);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 120, 90, 0.6);
+    background: radial-gradient(circle at 36% 30%, #52180f, #150706 62%);
+    color: #ffd0c4;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+      0 0 0 1px rgba(255, 59, 48, 0.14),
+      0 0 70px rgba(255, 59, 48, 0.28),
+      inset 0 0 44px rgba(255, 59, 48, 0.18);
+    transition: transform 0.2s ease, box-shadow 0.25s ease;
+  }
+
+  .startBtn:hover {
+    transform: scale(1.035);
+    box-shadow:
+      0 0 0 1px rgba(255, 59, 48, 0.24),
+      0 0 100px rgba(255, 59, 48, 0.42),
+      inset 0 0 56px rgba(255, 59, 48, 0.26);
+  }
+
+  .startBtn:active { transform: scale(0.99); }
+
+  .startBtn:disabled { opacity: 0.7; cursor: wait; }
+
+  .startBtn::before,
+  .startBtn::after {
+    content: "";
+    position: absolute;
+    inset: -13px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 59, 48, 0.24);
+    animation: pulse 2.6s ease-out infinite;
+    pointer-events: none;
+  }
+
+  .startBtn::after { animation-delay: 1.3s; }
+
+  @keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0.85; }
+    75% { transform: scale(1.16); opacity: 0; }
+    100% { transform: scale(1.16); opacity: 0; }
+  }
+
+  .overlayNote {
+    margin-top: 14px !important;
+    font-size: 10.5px !important;
+    letter-spacing: 0.06em;
+    color: #6b7a90 !important;
+  }
+
+  .overlay .mini {
+    display: inline-flex;
+    gap: 18px;
+    margin-top: 20px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #5d6c81;
+    text-transform: uppercase;
+  }
+
+  .overlay .mini i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #ff5a2a;
+    display: inline-block;
+    margin-right: 6px;
+    box-shadow: 0 0 8px #ff5a2a;
+  }
+
+  /* -------------------------------------------------------------- responsive */
+  @media (max-width: 980px) {
+    .controls { grid-template-columns: 1fr 1fr; }
+    .controlCard:first-child { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 760px) {
+    .stage { grid-template-columns: 1fr; }
+    .controls { grid-template-columns: 1fr; }
+    .controlCard:first-child { grid-column: auto; }
+    .tachCard { max-width: 480px; width: 100%; margin: 0 auto; }
+    .telemetry { min-height: 280px; }
+    .brand .sub { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <div class="overlayCard">
+    <div class="overlayKicker">ISLE OF MAN &middot; SENIOR TT</div>
+    <h1>ENGINE AUDIO LAB</h1>
+    <p>Self-contained Web Audio synthesiser for a 1000&nbsp;cc inline-four superbike.
+       16,000&nbsp;rpm, six gears, quickshifter, overrun crackle and rev-limiter stutter.
+       No samples, no assets.</p>
+    <button class="startBtn" id="btnStart" type="button">START AUDIO</button>
+    <p class="overlayNote" id="overlayNote">Browsers require a click before audio can start.</p>
+    <div class="mini">
+      <span><i></i>ENGINE</span>
+      <span><i></i>WIND</span>
+      <span><i></i>TYRE</span>
+      <span><i></i>FX</span>
+    </div>
+  </div>
+</div>
+
+<main class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span><span class="slash">//</span> TT ENGINE AUDIO LAB</span>
+      <span class="sub">1000cc inline-four &middot; web audio</span>
+    </div>
+    <div class="statusbar">
+      <span class="pill locked" id="pillState"><i class="dot"></i><span id="pillStateText">LOCKED</span></span>
+      <span class="pill" id="pillCtx">ctx: &mdash;</span>
+      <button class="btn small" id="btnPause" type="button">PAUSE</button>
+      <button class="btn small" id="btnMute" type="button">MUTE</button>
+      <button class="btn small danger" id="btnStop" type="button">STOP</button>
+    </div>
+  </header>
+
+  <section class="stage">
+    <div class="card tachCard">
+      <canvas id="tach" width="460" height="460" aria-label="Tachometer"></canvas>
+      <div class="tachDigits">
+        <div><b id="rpmText">1250</b><span>RPM</span></div>
+        <div><b id="gearText">1</b><span>GEAR</span></div>
+        <div><b id="speedText">0</b><span>KM/H</span></div>
+      </div>
+    </div>
+
+    <div class="card telemetry">
+      <div class="teleRow">
+        <div class="labelRow"><span>THROTTLE</span><b id="thrText">0%</b></div>
+        <div class="bar"><i id="thrBar"></i></div>
+      </div>
+      <div class="teleRow">
+        <div class="labelRow"><span>MASTER OUT</span><b id="lvlText">&minus;&infin; dB</b></div>
+        <div class="bar"><i id="lvlBar" class="cyan"></i></div>
+      </div>
+
+      <div class="chips">
+        <span class="chip" id="chipBrake">BRAKE</span>
+        <span class="chip cyan" id="chipTuck">TUCK</span>
+        <span class="chip" id="chipLimiter">REV LIMIT</span>
+        <span class="chip cyan" id="chipAir">AIRBORNE</span>
+      </div>
+
+      <div class="logWrap">
+        <span class="logLabel">EVENT LOG</span>
+        <div class="log" id="log">Audio locked &mdash; press START AUDIO.</div>
+      </div>
+
+      <div class="teleGrid">
+        <div><span>Firing frequency</span><b id="f0Text">42 Hz &middot; f0 = rpm / 30</b></div>
+        <div><span>Layers</span><b>engine &middot; wind &middot; tyre &middot; whine &middot; fx</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="card controlCard">
+      <h2>DRIVE</h2>
+
+      <label class="slider" for="thrSlider">
+        <span class="capRow"><span>THROTTLE</span><span class="val" id="thrSliderVal">0%</span></span>
+        <input type="range" id="thrSlider" min="0" max="100" value="0" step="1">
+      </label>
+
+      <label class="slider" for="rpmSlider">
+        <span class="capRow"><span>RPM <span id="rpmModeTag" style="color:#5f6d82;letter-spacing:.06em">(auto)</span></span><span class="val" id="rpmSliderVal">1250</span></span>
+        <input type="range" id="rpmSlider" min="0" max="16000" value="1250" step="50">
+      </label>
+
+      <div class="toggles">
+        <button class="btn on" id="tglAuto" type="button">AUTO DRIVE</button>
+        <button class="btn on" id="tglAutoShift" type="button">AUTO SHIFT</button>
+        <button class="btn" id="tglBrake" type="button">BRAKE</button>
+        <button class="btn" id="tglTuck" type="button">TUCK</button>
+        <button class="btn" id="tglLimiter" type="button">REV LIMIT</button>
+        <button class="btn" id="tglAir" type="button">AIRBORNE</button>
+        <button class="btn" id="tglDemo" type="button" style="grid-column: span 3">▶ DEMO LAP</button>
+      </div>
+
+      <label class="slider" for="volSlider">
+        <span class="capRow"><span>MASTER VOLUME</span><span class="val" id="volVal">85%</span></span>
+        <input type="range" id="volSlider" min="0" max="100" value="85" step="1">
+      </label>
+
+      <p class="hint">Hold <b>W</b> / <b>&uarr;</b> for full throttle, <b>S</b> / <b>&darr;</b> to brake.
+        Manual RPM mode derives speed &amp; wind from rpm and gear.</p>
+    </div>
+
+    <div class="card controlCard">
+      <h2>GEARBOX <span class="tag" id="gearModeTag">AUTO</span></h2>
+      <div class="gears" id="gears"></div>
+      <div class="row2">
+        <button class="btn big" id="btnShiftDown" type="button">&#9664; DOWN <kbd>Q</kbd></button>
+        <button class="btn big" id="btnShiftUp" type="button">UP &#9654; <kbd>E</kbd></button>
+      </div>
+      <p class="hint">Upshift = ~50&nbsp;ms ignition cut, mechanical click, exhaust pop.
+        Downshift = longer cut, clunk and a heavier backfire.</p>
+      <div class="toggles" style="grid-template-columns:repeat(3,1fr)">
+        <button class="btn small" id="btnNear" type="button">NEAR MISS <kbd>N</kbd></button>
+        <button class="btn small" id="btnBeep" type="button">BEEP <kbd>B</kbd></button>
+        <button class="btn small danger" id="btnCrash" type="button">CRASH <kbd>C</kbd></button>
+      </div>
+      <label class="slider" for="crashSlider">
+        <span class="capRow"><span>CRASH INTENSITY</span><span class="val" id="crashVal">85%</span></span>
+        <input type="range" id="crashSlider" min="0" max="100" value="85" step="1">
+      </label>
+    </div>
+
+    <div class="card controlCard">
+      <h2>TEST SIGNALS</h2>
+      <p class="hint" style="color:#8796ab">Use the buttons to audition each layer:
+        quickshifter cuts, metallic crash, stereo near-miss whoosh and the start beep.</p>
+      <div class="row2">
+        <button class="btn" id="btnNear2" type="button">NEAR MISS</button>
+        <button class="btn" id="btnBeep2" type="button">COUNTDOWN</button>
+      </div>
+      <button class="btn danger big" id="btnCrash2" type="button">TRIGGER CRASH</button>
+      <p class="hint">Crash is synthesised from filtered noise bursts, metallic
+        ring partials and a sub-bass thud &mdash; intensity 0&ndash;1.</p>
+      <div class="chips" style="margin-top:auto">
+        <span class="chip cyan">PINK NOISE</span>
+        <span class="chip cyan">SAW STACK</span>
+        <span class="chip cyan">COMPRESSED</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span id="footStatus">Engine offline. Start audio, then hold W and shift with E.</span>
+    <span class="keys"><b>W/&uarr;</b> throttle &middot; <b>S/&darr;</b> brake &middot; <b>Q/E</b> shift
+      &middot; <b>T</b> tuck &middot; <b>R</b> limit &middot; <b>C</b> crash &middot; <b>N</b> near miss
+      &middot; <b>B</b> beep &middot; <b>M</b> mute &middot; <b>P</b> pause</span>
+  </footer>
+</main>
+
+<script src="audio-engine.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var REDLINE = 16000;
+  var TOP_SPEED = [0, 95, 145, 190, 230, 265, 300];
+  var ENGINE_CLASS = window.TTEngineAudio;
+
+  // ------------------------------------------------------------- DOM refs
+  function $(id) { return document.getElementById(id); }
+
+  var ui = {
+    overlay: $('overlay'),
+    btnStart: $('btnStart'),
+    overlayNote: $('overlayNote'),
+    pillState: $('pillState'),
+    pillStateText: $('pillStateText'),
+    pillCtx: $('pillCtx'),
+    btnPause: $('btnPause'),
+    btnMute: $('btnMute'),
+    btnStop: $('btnStop'),
+    tach: $('tach'),
+    rpmText: $('rpmText'),
+    gearText: $('gearText'),
+    speedText: $('speedText'),
+    thrText: $('thrText'),
+    thrBar: $('thrBar'),
+    lvlText: $('lvlText'),
+    lvlBar: $('lvlBar'),
+    chipBrake: $('chipBrake'),
+    chipTuck: $('chipTuck'),
+    chipLimiter: $('chipLimiter'),
+    chipAir: $('chipAir'),
+    log: $('log'),
+    f0Text: $('f0Text'),
+    thrSlider: $('thrSlider'),
+    thrSliderVal: $('thrSliderVal'),
+    rpmSlider: $('rpmSlider'),
+    rpmSliderVal: $('rpmSliderVal'),
+    rpmModeTag: $('rpmModeTag'),
+    volSlider: $('volSlider'),
+    volVal: $('volVal'),
+    crashSlider: $('crashSlider'),
+    crashVal: $('crashVal'),
+    tglAuto: $('tglAuto'),
+    tglAutoShift: $('tglAutoShift'),
+    tglBrake: $('tglBrake'),
+    tglTuck: $('tglTuck'),
+    tglLimiter: $('tglLimiter'),
+    tglAir: $('tglAir'),
+    tglDemo: $('tglDemo'),
+    gears: $('gears'),
+    gearModeTag: $('gearModeTag'),
+    btnShiftDown: $('btnShiftDown'),
+    btnShiftUp: $('btnShiftUp'),
+    btnCrash: $('btnCrash'),
+    btnCrash2: $('btnCrash2'),
+    btnNear: $('btnNear'),
+    btnNear2: $('btnNear2'),
+    btnBeep: $('btnBeep'),
+    btnBeep2: $('btnBeep2'),
+    footStatus: $('footStatus')
+  };
+
+  // ---------------------------------------------------------------- state
+  var audio = null;
+  var unlocked = false;
+  var starting = false;
+  var muted = false;
+  var paused = false;
+  var keys = { throttle: false, brake: false };
+
+  var lab = {
+    gear: 1,
+    rpm: 1250,
+    speed: 0,
+    throttle: 0,
+    throttleSlider: 0,
+    manualRpm: 1250,
+    brake: false,
+    tuck: false,
+    airborne: false,
+    revLimit: false,
+    autoDrive: true,
+    autoShift: true,
+    demo: false,
+    demoT: 0,
+    demoNextFx: 5,
+    shiftCooldown: 0,
+    volume: 0.85,
+    crashAmt: 0.85,
+    level: 0
+  };
+
+  var lastT = 0;
+  var tachW = 0;
+  var tachH = 0;
+  var tctx = null;
+
+  // ------------------------------------------------------------- utility
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+  function log(msg) {
+    ui.log.textContent = msg;
+  }
+
+  function describeCtx() {
+    if (!audio || !audio.ctx) return 'ctx: \u2014';
+    var sr = audio.ctx.sampleRate ? (audio.ctx.sampleRate / 1000).toFixed(1) + ' kHz' : '';
+    return 'ctx: ' + (audio.ctx.state || '?') + (sr ? ' \u00b7 ' + sr : '');
+  }
+
+  function currentStatus() {
+    if (!unlocked) return 'LOCKED';
+    if (paused) return 'PAUSED';
+    if (muted) return 'MUTED';
+    return 'LIVE';
+  }
+
+  // -------------------------------------------------------------- audio
+  function buildState() {
+    return {
+      rpm: lab.rpm,
+      throttle: lab.throttle,
+      speedKmh: lab.speed,
+      gear: lab.gear,
+      braking: lab.brake || keys.brake,
+      tuck: lab.tuck,
+      airborne: lab.airborne,
+      revLimit: lab.revLimit || lab.rpm >= 15920
+    };
+  }
+
+  async function startAudio() {
+    if (!audio || starting) return;
+    starting = true;
+    ui.btnStart.disabled = true;
+    ui.btnStart.textContent = 'STARTING\u2026';
+    var ok = false;
+    try {
+      ok = await audio.unlock();
+    } catch (err) {
+      console.error(err);
+    }
+    starting = false;
+    ui.btnStart.disabled = false;
+    ui.btnStart.textContent = 'START AUDIO';
+
+    if (ok) {
+      unlocked = true;
+      paused = false;
+      lab.speed = 0;
+      lab.throttle = 0;
+      lab.rpm = 1250;
+      lab.gear = 1;
+      lab.shiftCooldown = 0;
+      audio.setMuted(muted);
+      audio.setPaused(false);
+      audio.setVolume(lab.volume);
+      audio.update(buildState());
+      ui.overlay.classList.add('hidden');
+      ui.btnPause.textContent = 'PAUSE';
+      ui.btnMute.textContent = muted ? 'UNMUTE' : 'MUTE';
+      log('Audio online \u00b7 ' + describeCtx() + ' \u00b7 hold W to open the throttle.');
+      ui.footStatus.textContent = 'Engine live. Hold W / \u2191 for throttle, E to upshift.';
+    } else {
+      ui.overlayNote.textContent = 'The browser blocked audio. Click START AUDIO again.';
+      ui.footStatus.textContent = 'Audio failed to start \u2014 click START AUDIO again.';
+    }
+    syncControls();
+  }
+
+  function stopAudio() {
+    if (!audio) return;
+    audio.stop();
+    unlocked = false;
+    paused = false;
+    lab.demo = false;
+    lab.demoT = 0;
+    lab.shiftCooldown = 0;
+    lab.speed = 0;
+    lab.throttle = 0;
+    lab.throttleSlider = 0;
+    lab.rpm = 1250;
+    lab.manualRpm = 1250;
+    lab.gear = 1;
+    lab.brake = false;
+    lab.tuck = false;
+    lab.airborne = false;
+    lab.revLimit = false;
+    lab.level = 0;
+    ui.thrSlider.value = '0';
+    ui.thrSliderVal.textContent = '0%';
+    ui.rpmSlider.value = '1250';
+    ui.rpmSliderVal.textContent = '1250';
+    ui.overlay.classList.remove('hidden');
+    ui.btnPause.textContent = 'PAUSE';
+    ui.btnMute.textContent = muted ? 'UNMUTE' : 'MUTE';
+    log('Engine stopped. AudioContext closed.');
+    ui.footStatus.textContent = 'Engine offline. Start audio, then hold W and shift with E.';
+    syncControls();
+  }
+
+  function togglePause() {
+    if (!unlocked) return;
+    paused = !paused;
+    audio.setPaused(paused);
+    ui.btnPause.textContent = paused ? 'RESUME' : 'PAUSE';
+    log(paused ? 'Paused \u2014 all layers gated off.' : 'Resumed.');
+    syncControls();
+  }
+
+  function toggleMute() {
+    muted = !muted;
+    if (audio) audio.setMuted(muted);
+    ui.btnMute.textContent = muted ? 'UNMUTE' : 'MUTE';
+    log(muted ? 'Muted.' : 'Unmuted.');
+    syncControls();
+  }
+
+  function crash() {
+    if (audio) audio.triggerCrash(lab.crashAmt);
+    log('CRASH \u00b7 impact intensity ' + Math.round(lab.crashAmt * 100) + '%');
+  }
+
+  function nearMiss() {
+    if (audio) audio.triggerNearMiss();
+    log('NEAR MISS \u00b7 stereo whoosh.');
+  }
+
+  function beep() {
+    if (audio) audio.triggerCountdown();
+    log('COUNTDOWN \u00b7 880 Hz beep.');
+  }
+
+  // ------------------------------------------------------------ gearbox
+  function syncGearButtons() {
+    var btns = ui.gears.children;
+    for (var i = 0; i < btns.length; i++) {
+      var g = +btns[i].getAttribute('data-gear');
+      var active = g === lab.gear;
+      if (btns[i].classList.contains('active') !== active) {
+        btns[i].classList.toggle('active', active);
+      }
+    }
+  }
+
+  function selectGear(g) {
+    g = clamp(g, 1, 6);
+    if (g === lab.gear) return;
+    var up = g > lab.gear;
+    lab.gear = g;
+    lab.shiftCooldown = 1.2; // give the manual shift time to be heard
+    if (unlocked) {
+      audio.triggerShift(up);
+      log((up ? 'UPSHIFT' : 'DOWNSHIFT') + ' \u2192 gear ' + g + (up ? ' \u00b7 pop' : ' \u00b7 clunk'));
+    }
+    if (!lab.autoDrive) {
+      lab.speed = lab.rpm / REDLINE * TOP_SPEED[lab.gear];
+    }
+    syncGearButtons();
+  }
+
+  function shiftUp() { selectGear(lab.gear + 1); }
+  function shiftDown() { selectGear(lab.gear - 1); }
+
+  function buildGearButtons() {
+    for (var g = 1; g <= 6; g++) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'gearBtn' + (g === lab.gear ? ' active' : '');
+      b.setAttribute('data-gear', String(g));
+      b.textContent = String(g);
+      b.setAttribute('aria-label', 'Select gear ' + g);
+      ui.gears.appendChild(b);
+      (function (gear) {
+        b.addEventListener('click', function () { selectGear(gear); });
+      })(g);
+    }
+  }
+
+  // -------------------------------------------------------------- physics
+  function stepSimulation(dt) {
+    var demoThrottle = null;
+
+    if (lab.demo) {
+      lab.demoT += dt;
+      var cyc = lab.demoT % 8;
+      demoThrottle = cyc < 5.2 ? 1 : 0;
+      lab.brake = cyc > 7.0;
+      if (lab.demoT > lab.demoNextFx) {
+        lab.demoNextFx += 5.5;
+        if (unlocked) nearMiss();
+      }
+    }
+
+    // throttle smoothing (no zipper for the synth update)
+    var target = demoThrottle !== null
+      ? demoThrottle
+      : Math.max(lab.throttleSlider, keys.throttle ? 1 : 0);
+    lab.throttle += (target - lab.throttle) * Math.min(1, dt * 13);
+    if (Math.abs(lab.throttle - target) < 0.003) lab.throttle = target;
+
+    if (lab.autoDrive) {
+      drivePhysics(dt);
+    } else {
+      lab.rpm = clamp(lab.manualRpm, 0, REDLINE);
+      lab.speed = lab.rpm / REDLINE * TOP_SPEED[lab.gear];
+    }
+  }
+
+  function drivePhysics(dt) {
+    if (lab.shiftCooldown > 0) {
+      lab.shiftCooldown = Math.max(0, lab.shiftCooldown - dt);
+    }
+    var top = TOP_SPEED[lab.gear];
+    var braking = lab.brake || keys.brake;
+    var rpm = lab.speed < 1.2
+      ? 1250 + lab.throttle * 550
+      : clamp(lab.speed * REDLINE / top, 1150, REDLINE);
+
+    if (braking) {
+      lab.speed = Math.max(0, lab.speed - 95 * dt);
+    } else {
+      var n = rpm / REDLINE;
+      var power = clamp(0.3 + 2.15 * n - 1.4 * n * n, 0.25, 1.12);
+      var a = lab.throttle * 34 * power - 0.00045 * lab.speed * lab.speed - 0.5;
+      if (lab.throttle < 0.04 && lab.speed > 2) a -= 2.2;
+      lab.speed = clamp(lab.speed + a * dt, 0, 320);
+    }
+
+    top = TOP_SPEED[lab.gear];
+    rpm = lab.speed < 1.2
+      ? 1250 + lab.throttle * 550
+      : clamp(lab.speed * REDLINE / top, 1150, REDLINE);
+
+    if (lab.autoShift && lab.shiftCooldown <= 0) {
+      if (rpm > 15150 && lab.gear < 6) {
+        lab.gear++;
+        audio.triggerShift(true);
+        log('AUTO UPSHIFT \u2192 gear ' + lab.gear);
+        top = TOP_SPEED[lab.gear];
+        rpm = clamp(lab.speed * REDLINE / top, 1150, REDLINE);
+        syncGearButtons();
+      } else if (rpm < 5200 && lab.gear > 1 && lab.speed > 3) {
+        lab.gear--;
+        audio.triggerShift(false);
+        log('AUTO DOWNSHIFT \u2192 gear ' + lab.gear);
+        top = TOP_SPEED[lab.gear];
+        rpm = clamp(lab.speed * REDLINE / top, 1150, REDLINE);
+        syncGearButtons();
+      }
+    }
+
+    lab.rpm = clamp(rpm, 1150, REDLINE);
+  }
+
+  // ---------------------------------------------------------------- render
+  function syncControls() {
+    ui.tglAuto.classList.toggle('on', lab.autoDrive);
+    ui.tglAutoShift.classList.toggle('on', lab.autoShift);
+    ui.tglBrake.classList.toggle('on', lab.brake);
+    ui.tglTuck.classList.toggle('on', lab.tuck);
+    ui.tglLimiter.classList.toggle('on', lab.revLimit);
+    ui.tglAir.classList.toggle('on', lab.airborne);
+    ui.tglDemo.classList.toggle('on', lab.demo);
+    ui.rpmSlider.disabled = lab.autoDrive;
+    ui.rpmModeTag.textContent = lab.autoDrive ? '(auto)' : '(manual)';
+    ui.gearModeTag.textContent = lab.autoShift ? 'AUTO' : 'MANUAL';
+    ui.gearModeTag.style.opacity = lab.autoShift ? '1' : '0.55';
+    syncGearButtons();
+
+    var state = currentStatus();
+    ui.pillState.className = 'pill ' + state.toLowerCase();
+    ui.pillStateText.textContent = state;
+    ui.footStatus.textContent = !unlocked
+      ? 'Engine offline. Start audio, then hold W and shift with E.'
+      : paused
+        ? 'Paused \u2014 press P or RESUME.'
+        : muted
+          ? 'Muted \u2014 press M or UNMUTE.'
+          : 'Live \u00b7 f0 ' + Math.round(lab.rpm / 30) + ' Hz \u00b7 gear ' + lab.gear + ' \u00b7 ' + Math.round(lab.speed) + ' km/h';
+  }
+
+  function renderFrame() {
+    var rpm = Math.round(lab.rpm);
+    ui.rpmText.textContent = String(rpm);
+    ui.gearText.textContent = String(lab.gear);
+    ui.speedText.textContent = String(Math.round(lab.speed));
+    ui.f0Text.textContent = Math.round(lab.rpm / 30) + ' Hz \u00b7 f0 = rpm / 30';
+
+    var thrPct = Math.round(lab.throttle * 100);
+    ui.thrText.textContent = thrPct + '%';
+    ui.thrBar.style.width = thrPct + '%';
+    if (document.activeElement !== ui.thrSlider) {
+      ui.thrSliderVal.textContent = Math.round(lab.throttle * 100) + '%';
+    }
+
+    ui.lvlBar.style.width = (clamp(lab.level, 0, 1) * 100).toFixed(1) + '%';
+    ui.lvlText.textContent = lab.level > 0.0006
+      ? (20 * Math.log10(lab.level)).toFixed(0) + ' dB'
+      : '\u2212\u221e dB';
+
+    if (lab.autoDrive) {
+      ui.rpmSlider.value = String(Math.round(lab.rpm));
+      ui.rpmSliderVal.textContent = String(Math.round(lab.rpm));
+    } else {
+      ui.rpmSliderVal.textContent = String(Math.round(lab.manualRpm));
+    }
+
+    ui.chipBrake.classList.toggle('on', lab.brake || keys.brake);
+    ui.chipTuck.classList.toggle('on', lab.tuck);
+    ui.chipLimiter.classList.toggle('on', lab.revLimit || lab.rpm >= 15920);
+    ui.chipAir.classList.toggle('on', lab.airborne);
+
+    ui.pillCtx.textContent = describeCtx();
+  }
+
+  // ------------------------------------------------------------ tachometer
+  function resizeTach() {
+    if (!ui.tach) return;
+    var rect = ui.tach.getBoundingClientRect();
+    var size = Math.max(220, rect.width || 360);
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var px = Math.round(size * dpr);
+    if (ui.tach.width !== px || ui.tach.height !== px) {
+      ui.tach.width = px;
+      ui.tach.height = px;
+      tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    tachW = size;
+    tachH = size;
+  }
+
+  function drawTach() {
+    if (!tctx) return;
+    if (!tachW || !tachH) resizeTach();
+    var w = tachW;
+    var h = tachH;
+    if (!w || !h) return;
+
+    var cx = w / 2;
+    var cy = h / 2;
+    var R = Math.min(w, h) / 2 - 6;
+    var start = Math.PI * 0.75;
+    var sweep = Math.PI * 1.5;
+    var progress = clamp(lab.rpm / REDLINE, 0, 1);
+
+    tctx.clearRect(0, 0, w, h);
+
+    // dial face
+    var bg = tctx.createRadialGradient(cx, cy, R * 0.1, cx, cy, R);
+    bg.addColorStop(0, 'rgba(24, 29, 39, 0.92)');
+    bg.addColorStop(1, 'rgba(6, 8, 12, 0.98)');
+    tctx.beginPath();
+    tctx.arc(cx, cy, R, 0, Math.PI * 2);
+    tctx.fillStyle = bg;
+    tctx.fill();
+    tctx.lineWidth = 1;
+    tctx.strokeStyle = 'rgba(255, 255, 255, 0.09)';
+    tctx.stroke();
+
+    // subtle inner ring
+    tctx.beginPath();
+    tctx.arc(cx, cy, R * 0.885, 0, Math.PI * 2);
+    tctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+    tctx.stroke();
+
+    // track + redline
+    tctx.lineCap = 'round';
+    tctx.beginPath();
+    tctx.arc(cx, cy, R - 14, start, start + sweep);
+    tctx.strokeStyle = 'rgba(255, 255, 255, 0.055)';
+    tctx.lineWidth = 9;
+    tctx.stroke();
+
+    tctx.beginPath();
+    tctx.arc(cx, cy, R - 14, start + sweep * (14000 / REDLINE), start + sweep);
+    tctx.strokeStyle = 'rgba(255, 59, 48, 0.5)';
+    tctx.lineWidth = 9;
+    tctx.stroke();
+
+    // progress arc
+    if (progress > 0.004) {
+      var grad = tctx.createLinearGradient(cx - R, cy + R, cx + R, cy - R);
+      grad.addColorStop(0, '#4fe3ff');
+      grad.addColorStop(0.55, '#ff9a3c');
+      grad.addColorStop(1, '#ff2d20');
+      tctx.beginPath();
+      tctx.arc(cx, cy, R - 14, start, start + sweep * progress);
+      tctx.strokeStyle = grad;
+      tctx.lineWidth = 9;
+      tctx.shadowColor = progress > 0.875 ? 'rgba(255, 59, 48, 0.65)' : 'rgba(255, 122, 24, 0.4)';
+      tctx.shadowBlur = 16;
+      tctx.stroke();
+      tctx.shadowBlur = 0;
+    }
+
+    // ticks + labels
+    tctx.textAlign = 'center';
+    tctx.textBaseline = 'middle';
+    for (var i = 0; i <= 32; i++) {
+      var f = i / 32;
+      var a = start + sweep * f;
+      var major = (i % 4 === 0);
+      var minor = (i % 2 === 0);
+      var r1 = R - 27;
+      var r2 = R - (minor ? 33 : 30);
+      var red = f >= 0.875;
+
+      tctx.beginPath();
+      tctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+      tctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+      tctx.strokeStyle = red
+        ? 'rgba(255, 108, 96, 0.9)'
+        : (minor ? 'rgba(226, 236, 250, 0.62)' : 'rgba(170, 188, 212, 0.28)');
+      tctx.lineWidth = major ? 2.2 : (minor ? 1.5 : 1);
+      tctx.stroke();
+
+      if (major) {
+        var lr = R - 51;
+        tctx.font = '600 10.5px ' + 'ui-monospace, SFMono-Regular, Menlo, monospace';
+        tctx.fillStyle = red ? 'rgba(255, 124, 112, 0.95)' : 'rgba(196, 210, 230, 0.5)';
+        tctx.fillText(String(Math.round(i / 4) * 2), cx + Math.cos(a) * lr, cy + Math.sin(a) * lr);
+      }
+    }
+
+    // needle
+    var na = start + sweep * progress;
+    tctx.save();
+    tctx.translate(cx, cy);
+    tctx.rotate(na);
+    tctx.shadowColor = progress > 0.875 ? 'rgba(255, 59, 48, 0.9)' : 'rgba(255, 122, 24, 0.7)';
+    tctx.shadowBlur = 20;
+    var ng = tctx.createLinearGradient(-R * 0.18, 0, R * 0.72, 0);
+    ng.addColorStop(0, '#ffb08a');
+    ng.addColorStop(0.45, '#ff5a2a');
+    ng.addColorStop(1, '#ff2d20');
+    tctx.beginPath();
+    tctx.moveTo(-R * 0.17, 3.6);
+    tctx.lineTo(R * 0.705, 0);
+    tctx.lineTo(-R * 0.17, -3.6);
+    tctx.closePath();
+    tctx.fillStyle = ng;
+    tctx.fill();
+    tctx.restore();
+    tctx.shadowBlur = 0;
+
+    // hub
+    tctx.beginPath();
+    tctx.arc(cx, cy, R * 0.078, 0, Math.PI * 2);
+    tctx.fillStyle = '#0a0d12';
+    tctx.fill();
+    tctx.lineWidth = 1.5;
+    tctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    tctx.stroke();
+    tctx.beginPath();
+    tctx.arc(cx, cy, R * 0.032, 0, Math.PI * 2);
+    tctx.fillStyle = '#ff3b30';
+    tctx.fill();
+
+    // captions
+    tctx.font = '700 8.5px ' + 'ui-monospace, SFMono-Regular, Menlo, monospace';
+    tctx.fillStyle = 'rgba(150, 168, 190, 0.5)';
+    tctx.fillText('TT // INLINE-4', cx, cy - R * 0.43);
+    tctx.fillStyle = lab.revLimit ? 'rgba(255, 92, 80, 0.95)' : 'rgba(150, 168, 190, 0.5)';
+    tctx.fillText(lab.revLimit ? '\u25cf REV LIMIT' : 'x1000 RPM', cx, cy + R * 0.43);
+  }
+
+  // ----------------------------------------------------------- frame loop
+  function frame(now) {
+    var dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 0.016;
+    lastT = now;
+
+    if (unlocked && !paused) {
+      stepSimulation(dt);
+      audio.update(buildState());
+      var lvl = audio.getLevel ? audio.getLevel() : 0;
+      var target = Math.min(1, lvl * 3.0);
+      lab.level += (target - lab.level) * Math.min(1, dt * 9);
+      if (lab.level < 0.0004) lab.level = 0;
+    }
+
+    renderFrame();
+    drawTach();
+    requestAnimationFrame(frame);
+  }
+
+  // ------------------------------------------------------------ UI wiring
+  function setAutoDrive(on) {
+    if (lab.autoDrive === on) return;
+    lab.autoDrive = on;
+    if (!on) {
+      lab.manualRpm = Math.round(lab.rpm);
+      ui.rpmSlider.value = String(lab.manualRpm);
+    }
+    syncControls();
+  }
+
+  function wireUI() {
+    ui.btnStart.addEventListener('click', startAudio);
+    ui.overlay.addEventListener('click', function (e) {
+      if (e.target === ui.overlay) startAudio();
+    });
+
+    ui.btnPause.addEventListener('click', togglePause);
+    ui.btnMute.addEventListener('click', toggleMute);
+    ui.btnStop.addEventListener('click', stopAudio);
+
+    ui.btnCrash.addEventListener('click', crash);
+    ui.btnCrash2.addEventListener('click', crash);
+    ui.btnNear.addEventListener('click', nearMiss);
+    ui.btnNear2.addEventListener('click', nearMiss);
+    ui.btnBeep.addEventListener('click', beep);
+    ui.btnBeep2.addEventListener('click', beep);
+
+    ui.btnShiftUp.addEventListener('click', shiftUp);
+    ui.btnShiftDown.addEventListener('click', shiftDown);
+
+    ui.tglAuto.addEventListener('click', function () {
+      setAutoDrive(!lab.autoDrive);
+      log(lab.autoDrive ? 'Auto drive on.' : 'Manual RPM mode.');
+    });
+    ui.tglAutoShift.addEventListener('click', function () {
+      lab.autoShift = !lab.autoShift;
+      syncControls();
+      log(lab.autoShift ? 'Auto shift on.' : 'Manual shifting.');
+    });
+    ui.tglBrake.addEventListener('click', function () {
+      lab.brake = !lab.brake;
+      syncControls();
+    });
+    ui.tglTuck.addEventListener('click', function () {
+      lab.tuck = !lab.tuck;
+      syncControls();
+      log(lab.tuck ? 'Tucked \u2014 wind noise reduced.' : 'Sitting up.');
+    });
+    ui.tglLimiter.addEventListener('click', function () {
+      lab.revLimit = !lab.revLimit;
+      syncControls();
+      log(lab.revLimit ? 'Rev limiter engaged.' : 'Rev limiter off.');
+    });
+    ui.tglAir.addEventListener('click', function () {
+      lab.airborne = !lab.airborne;
+      syncControls();
+      log(lab.airborne ? 'Airborne \u2014 tyre hiss cut.' : 'On the ground.');
+    });
+    ui.tglDemo.addEventListener('click', function () {
+      lab.demo = !lab.demo;
+      if (lab.demo) {
+        lab.demoT = 0;
+        lab.demoNextFx = 5;
+        lab.shiftCooldown = 0;
+        lab.autoDrive = true;
+        lab.autoShift = true;
+        lab.brake = false;
+        lab.revLimit = false;
+        ui.rpmSlider.disabled = true;
+        if (!unlocked) startAudio();
+        log('Demo lap \u2014 full throttle, auto shifts, lift + brake every 8 s.');
+      } else {
+        lab.brake = false;
+        log('Demo off.');
+      }
+      syncControls();
+    });
+
+    ui.thrSlider.addEventListener('input', function () {
+      lab.throttleSlider = +ui.thrSlider.value / 100;
+      ui.thrSliderVal.textContent = ui.thrSlider.value + '%';
+    });
+    ui.thrSlider.addEventListener('change', function () {
+      lab.throttleSlider = +ui.thrSlider.value / 100;
+    });
+
+    ui.rpmSlider.addEventListener('input', function () {
+      var wanted = +ui.rpmSlider.value;
+      setAutoDrive(false);
+      lab.manualRpm = wanted;
+      lab.rpm = lab.manualRpm;
+      lab.speed = lab.rpm / REDLINE * TOP_SPEED[lab.gear];
+      ui.rpmSlider.value = String(lab.manualRpm);
+      ui.rpmSliderVal.textContent = String(lab.manualRpm);
+    });
+
+    ui.volSlider.addEventListener('input', function () {
+      lab.volume = +ui.volSlider.value / 100;
+      ui.volVal.textContent = ui.volSlider.value + '%';
+      if (audio) audio.setVolume(lab.volume);
+    });
+
+    ui.crashSlider.addEventListener('input', function () {
+      lab.crashAmt = +ui.crashSlider.value / 100;
+      ui.crashVal.textContent = ui.crashSlider.value + '%';
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (!unlocked) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          startAudio();
+        }
+        return;
+      }
+      var k = e.key;
+      if (k === 'ArrowUp' || k === 'w' || k === 'W') {
+        keys.throttle = true;
+        e.preventDefault();
+        return;
+      }
+      if (k === 'ArrowDown' || k === 's' || k === 'S') {
+        keys.brake = true;
+        e.preventDefault();
+        return;
+      }
+      if (k === ' ' || k === 'ArrowUp' || k === 'ArrowDown') e.preventDefault();
+      if (e.repeat) return;
+      switch (k.toLowerCase()) {
+        case 'q': shiftDown(); break;
+        case 'e': shiftUp(); break;
+        case 't':
+          lab.tuck = !lab.tuck;
+          syncControls();
+          log(lab.tuck ? 'Tucked \u2014 wind noise reduced.' : 'Sitting up.');
+          break;
+        case 'r':
+          lab.revLimit = !lab.revLimit;
+          syncControls();
+          log(lab.revLimit ? 'Rev limiter engaged.' : 'Rev limiter off.');
+          break;
+        case 'c': crash(); break;
+        case 'n': nearMiss(); break;
+        case 'b': beep(); break;
+        case 'm': toggleMute(); break;
+        case 'p': togglePause(); break;
+        case ' ':
+          e.preventDefault();
+          beep();
+          break;
+      }
+    });
+
+    document.addEventListener('keyup', function (e) {
+      var k = e.key;
+      if (k === 'ArrowUp' || k === 'w' || k === 'W') keys.throttle = false;
+      if (k === 'ArrowDown' || k === 's' || k === 'S') keys.brake = false;
+    });
+
+    window.addEventListener('resize', resizeTach);
+    if (window.ResizeObserver) {
+      new ResizeObserver(resizeTach).observe(ui.tach);
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && unlocked && audio) {
+        // best-effort recovery after a background tab
+        audio.unlock().catch(function () {});
+      }
+    });
+  }
+
+  // ------------------------------------------------------------ bootstrap
+  function boot() {
+    tctx = ui.tach.getContext('2d');
+    buildGearButtons();
+    wireUI();
+
+    if (!ENGINE_CLASS) {
+      ui.overlayNote.textContent = 'audio-engine.js could not be loaded. Keep it next to this page.';
+      ui.btnStart.disabled = true;
+      log('ERROR: window.TTEngineAudio is missing.');
+      resizeTach();
+      requestAnimationFrame(frame);
+      return;
+    }
+
+    audio = new ENGINE_CLASS({ masterVolume: lab.volume });
+    syncControls();
+    resizeTach();
+    requestAnimationFrame(frame);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>
