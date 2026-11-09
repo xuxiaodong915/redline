@@ -87,6 +87,7 @@
 - `audio-lab.html` — 独立声浪试听台
 - `audio-engine.js` — 声浪合成引擎源码（`index.html` 中已内联一份）
 - `README.md` — 本说明
+- `docs/` — GitHub Pages 发布目录（`docs/index.html` 与根目录保持一致）
 - `qa-report.md` — 独立 QA 报告
 
 ## 本地运行
@@ -107,6 +108,17 @@ python3 -m http.server 8765
 
 - 独立 QA 在真实 WebKit 渲染器与 jsdom 模拟器中跑过完整流程，覆盖桌面、手机横屏 / 竖屏、键盘 / 触屏、暂停、静音、撞车、结算、重开、localStorage 最佳成绩与 file:// 加载；没有未捕获 JS 错误。
 - 详细报告与复现记录见 [qa-report.md](qa-report.md)。
+
+## 更新线上版本
+
+GitHub Pages 当前从 `main` 分支的 `docs/` 目录发布。修改根目录 `index.html` 后，同步副本再推送：
+
+```bash
+cp index.html docs/index.html
+git add -A
+git commit -m "update build"
+git push origin main
+```
 
 ## 免责声明
 
