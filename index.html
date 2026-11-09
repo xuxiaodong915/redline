@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>REDLINE · 曼岛死亡边缘</title>
 <meta name="theme-color" content="#080b0c" />
-<meta name="description" content="REDLINE：一款受曼岛 TT 启发的单文件第一人称摩托车山路竞速游戏。没有缓冲区，只有石墙、油门和引擎的嘶吼。" />
+<meta name="description" content="REDLINE：一款受曼岛 TT 启发的单文件第一人称摩托车山路竞速游戏。没有缓冲区，只有野草、矮树、油门和引擎的嘶吼。" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -331,7 +331,7 @@
         <div class="sector-line"><span class="sep"></span><b id="hudSector">SECTOR 01 · BRAY HILL</b><span class="pct" id="hudSectorProg">0%</span></div>
       </div>
       <div class="course-progress">
-        <div class="progress-top"><span>TT GRANDSTAND</span><span>4.8 KM / 12 LANDMARKS</span><span>FINISH</span></div>
+        <div class="progress-top"><span>TT GRANDSTAND</span><span>4.7 KM / 12 LANDMARKS</span><span>FINISH</span></div>
         <div class="progress-track"><div id="progressFill"></div><div class="progress-ticks" id="progressTicks"></div><div id="progressPlayer"></div></div>
         <div class="progress-landmarks" id="progressLandmarks"></div>
       </div>
@@ -343,7 +343,7 @@
     </div>
     <div class="hud-right"><div class="tuck-badge" id="tuckBadge">TUCK · −18% DRAG</div></div>
     <div id="callout" class="callout"><span id="calloutMain"></span><small id="calloutSub"></small></div>
-    <div id="dangerLabel" class="danger-label">NO RUN-OFF / STONE WALL</div>
+    <div id="dangerLabel" class="danger-label">NO BARRIERS / GRASS DITCH</div>
     <div id="countdown"><span id="countdownNum">3</span><small id="countdownLabel">HOLD THROTTLE</small></div>
   </div>
 
@@ -375,9 +375,9 @@
       <div class="hero-kicker">AN UNOFFICIAL ROAD-RACING TRIBUTE</div>
       <h1 class="hero-title"><span class="l1">RED</span><span class="l2">LINE</span></h1>
       <div class="hero-cn">曼岛 · <span>死亡边缘</span></div>
-      <p class="hero-desc">在石墙之间，把油门拧到底。<br>4.8 公里山路，12 个地标，<b>没有缓冲区</b>。后视镜里没有未来，只有你刚刚冲过的弯。</p>
+      <p class="hero-desc">在野草和矮树之间，把油门拧到底。<br>4.7 公里山路，12 个地标，<b>没有缓冲区</b>。后视镜里没有未来，只有你刚刚冲过的弯。</p>
       <div class="spec-row">
-        <div><span>COURSE</span><b>4.8 <em>KM</em></b></div>
+        <div><span>COURSE</span><b>4.7 <em>KM</em></b></div>
         <div><span>TOP SPEED</span><b>318 <em>KM/H</em></b></div>
         <div><span>RIDERS</span><b>5 <em>ON ROAD</em></b></div>
         <div><span>RUN-OFF</span><b style="color:var(--red)">0.0 <em>M</em></b></div>
@@ -392,7 +392,7 @@
       <div class="title-best"><span>YOUR BEST / PERSONAL RECORD</span><b id="bestTimeTitle">—:——.——</b></div>
     </div>
     <div class="portrait-hint">↻ 横屏体验更佳 · ROTATE FOR THE FULL COURSE</div>
-    <div class="danger-note"><b>NO RUN-OFF</b>WALLS AT 1.1 M<br>COMMIT OR BRAKE</div>
+    <div class="danger-note"><b>NO BARRIERS</b>GRASS DITCH / NO RUN-OFF<br>COMMIT OR BRAKE</div>
   </div>
 
   <div id="pauseScreen" class="overlay panel-overlay hidden">
@@ -442,7 +442,7 @@
     <div class="panel">
       <div class="eyebrow">RUN TERMINATED / TOO MUCH COMMITMENT</div>
       <h2>WIPE<span class="dim">OUT.</span></h2>
-      <p class="lede">石墙没有退让。曼岛不会记住一个在弯心松油门的人，但也不会记住一个再也回不来的人。减速，重新来。</p>
+      <p class="lede">草坡和矮树没有退让。曼岛不会记住一个在弯心松油门的人，但也不会记住一个再也回不来的人。减速，重新来。</p>
       <div class="crash-reason" id="crashReason">IMPACT / TURN 7 / 212 KM/H</div>
       <div class="panel-actions">
         <button class="btn-primary" id="crashAgainBtn" type="button">重新出发 <small>TRY AGAIN</small></button>
@@ -1685,6 +1685,10 @@ function rgba(hex, a) {
   var c = hexRGB(hex);
   return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
 }
+function hexA(hex, a) {
+  var n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
 function mixColor(c1, c2, t) {
   var a = hexRGB(c1), b = hexRGB(c2);
   return 'rgb(' + Math.round(lerp(a[0], b[0], t)) + ',' + Math.round(lerp(a[1], b[1], t)) + ',' + Math.round(lerp(a[2], b[2], t)) + ')';
@@ -1833,7 +1837,8 @@ var Audio = {
 
 /* ------------------------------------------------------------- constants */
 var SEG = 200;
-var ROAD_W = 1220;          // visual half-width in world units (a narrow mountain road)
+var ROAD_W = 960;
+var ELEV_BOOST = 2.0;      // exaggerate mountain crests while keeping cockpit height          // narrow Manx mountain road; no run-off, just grass
 var CAM_H = 780;
 var FOV = 99;
 var CAMERA_DEPTH = 1 / Math.tan((FOV / 2) * Math.PI / 180);
@@ -1850,12 +1855,12 @@ var RACE_DISTANCE = (FINISH_SEG - START_SEG) * SEG;
 var GEAR_TOP_KMH = [96, 137, 179, 218, 261, 318];
 
 var ZONES = {
-  town:     { grass1:'#1d2a21', grass2:'#18251e', verge:'#343227', fog:'#5d5b52', road1:'#343738', road2:'#313536', tree:0.15, wallH:500, sky:'#7c6c5c' },
-  country:  { grass1:'#1b2b21', grass2:'#15241c', verge:'#302f24', fog:'#4d5b52', road1:'#303435', road2:'#2d3233', tree:0.7, wallH:540, sky:'#817058' },
-  glen:     { grass1:'#14261c', grass2:'#0f1f17', verge:'#262a20', fog:'#30483e', road1:'#2f3334', road2:'#2c3031', tree:1.1, wallH:600, sky:'#4e6157' },
-  village:  { grass1:'#202a21', grass2:'#1a251d', verge:'#38352a', fog:'#55524a', road1:'#333637', road2:'#303435', tree:0.45, wallH:470, sky:'#88715a' },
-  mountain: { grass1:'#1c2521', grass2:'#151e1b', verge:'#3a352b', fog:'#5c5d66', road1:'#303436', road2:'#2d3133', tree:0.2, wallH:380, sky:'#716a77' },
-  coast:    { grass1:'#1d2a24', grass2:'#17241f', verge:'#363329', fog:'#666568', road1:'#343738', road2:'#313536', tree:0.3, wallH:500, sky:'#92745e' }
+  town:     { grass1:'#1c2a22', grass2:'#1b2821', verge:'#343227', fog:'#5d5b52', road1:'#343738', road2:'#313536', tree:0.15, wallH:500, sky:'#7c6c5c' },
+  country:  { grass1:'#1b2b21', grass2:'#192920', verge:'#302f24', fog:'#4d5b52', road1:'#303435', road2:'#2d3233', tree:0.7, wallH:540, sky:'#817058' },
+  glen:     { grass1:'#16281e', grass2:'#14261c', verge:'#262a20', fog:'#30483e', road1:'#2f3334', road2:'#2c3031', tree:1.1, wallH:600, sky:'#4e6157' },
+  village:  { grass1:'#202a21', grass2:'#1e291f', verge:'#38352a', fog:'#55524a', road1:'#333637', road2:'#303435', tree:0.45, wallH:470, sky:'#88715a' },
+  mountain: { grass1:'#1c2521', grass2:'#1a2420', verge:'#3a352b', fog:'#5c5d66', road1:'#303436', road2:'#2d3133', tree:0.2, wallH:380, sky:'#716a77' },
+  coast:    { grass1:'#1d2a24', grass2:'#1b2822', verge:'#363329', fog:'#666568', road1:'#343738', road2:'#313536', tree:0.3, wallH:500, sky:'#92745e' }
 };
 
 var WALLS = {
@@ -1901,6 +1906,7 @@ var G = {
   trailT: 0,
   finishTime: 0,
   finishRank: 5,
+  wasOff: false,
   sectorIdx: 0,
   sectorCrossed: {},
   sectorSplit: null,
@@ -1981,38 +1987,45 @@ function buildTrack() {
   addSection(PRE_SEG, 0, 0, 'town', 'stone', { ramp: 0.01 });
   landmarks.push({ seg: START_SEG, name: 'TT GRANDSTAND', short: 'START', tick: 0 });
   var plan = [
-    [160, 0.15, -8, 'town', 'stone'],
-    [150, 1.6, -95, 'town', 'stone', 'BRAY HILL'],
-    [100, -1.1, -38, 'country', 'stone'],
-    [125, -2.55, 30, 'country', 'stone', 'QUARTER BRIDGE'],
-    [150, 0.8, 45, 'country', 'hedge', null, 'THE GLEN'],
-    [155, -1.15, 62, 'glen', 'hedge', 'UNION MILLS'],
-    [160, 1.0, 55, 'glen', 'hedge'],
-    [130, -2.1, -25, 'glen', 'hedge', 'BALLAUGH BRIDGE'],
-    [95, 0.15, -120, 'village', 'stone', null, 'BRIDGE JUMP', true],
-    [160, 1.35, 72, 'glen', 'hedge'],
-    [155, -1.75, 85, 'glen', 'hedge', 'SULBY GLEN'],
-    [185, 1.3, 125, 'country', 'stone'],
-    [165, -1.55, 150, 'mountain', 'rock', 'THE MOUNTAIN'],
-    [225, 0.22, 60, 'mountain', 'rock'],
-    [230, 0.95, 30, 'mountain', 'rock', 'MOUNTAIN MILE'],
-    [180, -1.15, 10, 'mountain', 'rock'],
-    [160, 2.25, -45, 'mountain', 'rock'],
-    [150, -2.7, -80, 'mountain', 'rock', "KATE'S COTTAGE"],
-    [145, 1.6, -125, 'coast', 'stone'],
-    [170, -1.05, -150, 'coast', 'stone'],
-    [145, 2.35, -60, 'village', 'stone', 'CREG-NY-BAA'],
-    [120, -1.7, 30, 'village', 'stone'],
-    [110, 0.1, 45, 'village', 'stone'],
-    [95, 2.9, -85, 'country', 'hedge'],
-    [115, -2.0, 95, 'country', 'stone', "GOVERNOR'S DIP"],
-    [175, 0.95, -80, 'coast', 'stone'],
-    [170, -1.3, -55, 'coast', 'stone'],
-    [185, 0.12, -25, 'coast', 'stone'],
-    [150, 1.55, -10, 'country', 'hedge'],
-    [145, -1.1, 5, 'town', 'stone'],
-    [190, 0.05, 0, 'town', 'stone'],
-    [100, 0.0, 0, 'town', 'stone']
+    [145, 0.12, -26, 'town', 'grass'],
+    [165, 1.80, -1144, 'town', 'grass', 'BRAY HILL'],
+    [80, -1.70, -484, 'country', 'grass'],
+    [135, -3.30, 264, 'country', 'grass', 'QUARTER BRIDGE'],
+    [90, 2.50, 704, 'country', 'grass'],
+    [120, 0.35, 1430, 'country', 'grass'],
+    [115, -2.30, -396, 'glen', 'grass', 'UNION MILLS'],
+    [140, 1.60, 836, 'glen', 'grass'],
+    [85, -2.90, 1276, 'glen', 'grass'],
+    [110, 1.20, -484, 'village', 'grass', 'BALLAUGH BRIDGE'],
+    [90, -0.90, -1980, 'village', 'grass', null, 'BRIDGE JUMP', true],
+    [150, 2.00, 572, 'glen', 'grass'],
+    [120, -2.60, 1056, 'glen', 'grass', 'SULBY GLEN'],
+    [90, 3.20, -924, 'country', 'grass'],
+    [170, 0.40, 1980, 'mountain', 'grass'],
+    [120, -2.10, 1144, 'mountain', 'grass', 'THE MOUNTAIN'],
+    [160, 0.20, 660, 'mountain', 'grass'],
+    [220, 1.10, -396, 'mountain', 'grass', 'MOUNTAIN MILE'],
+    [100, -2.50, -1276, 'mountain', 'grass'],
+    [85, 3.40, 484, 'mountain', 'grass', "KATE'S COTTAGE"],
+    [150, -1.50, -1936, 'coast', 'grass'],
+    [100, 2.10, -748, 'coast', 'grass'],
+    [120, -3.00, -264, 'village', 'grass', 'CREG-NY-BAA'],
+    [85, 1.80, 660, 'village', 'grass'],
+    [100, -1.20, 396, 'village', 'grass'],
+    [70, 3.30, -792, 'country', 'grass'],
+    [105, -2.40, 1144, 'country', 'grass', "GOVERNOR'S DIP"],
+    [110, -1.80, 1364, 'coast', 'grass'],
+    [90, 2.60, -1144, 'coast', 'grass'],
+    [140, 0.30, -1672, 'coast', 'grass'],
+    [100, -2.20, 880, 'coast', 'grass'],
+    [120, 0.80, -660, 'coast', 'grass'],
+    [150, 2.20, -264, 'country', 'grass'],
+    [140, -1.70, 550, 'country', 'grass'],
+    [100, 0.40, -220, 'coast', 'grass'],
+    [120, 1.70, 396, 'town', 'grass'],
+    [150, -1.30, -198, 'town', 'grass'],
+    [160, 0.10, 0, 'town', 'grass'],
+    [90, 0.0, 0, 'town', 'grass']
   ];
   var jumpRange = null;
   for (var pi = 0; pi < plan.length; pi++) {
@@ -2052,22 +2065,22 @@ function decorateLandmarks() {
     var side = i % 2 ? -1 : 1;
     var signSeg = findSegment(Math.max(START_SEG + 20, lm.seg - 18) * SEG);
     if (signSeg && !isFinish) {
-      signSeg.sprites.push({ img: signFor(lm.name), offset: side * 1.24, w: 640, kind: 'sign' });
+      signSeg.sprites.push({ img: signFor(lm.name), offset: side * 1.92, w: 400, kind: 'sign' });
     }
     if (!isFinish) {
       for (var c = 0; c < 2; c++) {
         var crownSeg = findSegment((lm.seg - 30 + c * 8) * SEG);
         if (crownSeg) {
-          crownSeg.sprites.push({ img: SPR.crowd[c % 2], offset: -1.29, w: 700 + c * 180, kind: 'crowd' });
-          crownSeg.sprites.push({ img: SPR.crowd[(c + 1) % 2], offset: 1.29, w: 700 + c * 180, kind: 'crowd' });
+          crownSeg.sprites.push({ img: SPR.crowd[c % 2], offset: -2.0, w: 700 + c * 180, kind: 'crowd' });
+          crownSeg.sprites.push({ img: SPR.crowd[(c + 1) % 2], offset: 2.0, w: 700 + c * 180, kind: 'crowd' });
         }
       }
       var marshalSeg = findSegment((lm.seg - 10) * SEG);
-      if (marshalSeg) marshalSeg.sprites.push({ img: SPR.marshal, offset: side * 1.19, w: 300, kind: 'marshal' });
+      if (marshalSeg) marshalSeg.sprites.push({ img: SPR.marshal, offset: side * 2.08, w: 300, kind: 'marshal' });
     }
     if (lm.name === 'BALLAUGH BRIDGE') {
       var bseg = findSegment((lm.seg - 4) * SEG);
-      if (bseg) bseg.sprites.push({ img: SPR.banner, offset: -1.4, w: 1000, kind: 'banner' });
+      if (bseg) bseg.sprites.push({ img: SPR.banner, offset: -2.2, w: 1000, kind: 'banner' });
     }
     if (lm.name === "KATE'S COTTAGE") {
       var kseg = findSegment((lm.seg - 40) * SEG);
@@ -2079,19 +2092,19 @@ function decorateLandmarks() {
     }
     if (lm.name === 'GOVERNOR\'S DIP') {
       var gseg = findSegment((lm.seg - 25) * SEG);
-      if (gseg) gseg.sprites.push({ img: SPR.chevron, offset: 1.2, w: 720, kind: 'chevron' });
+      if (gseg) gseg.sprites.push({ img: SPR.chevron, offset: 1.58, w: 340, kind: 'chevron' });
     }
     if (lm.name === 'THE MOUNTAIN') {
       var tseg = findSegment((lm.seg - 12) * SEG);
-      if (tseg) tseg.sprites.push({ img: SPR.crowd[0], offset: -1.3, w: 800, kind: 'crowd' });
+      if (tseg) tseg.sprites.push({ img: SPR.crowd[0], offset: -2.05, w: 800, kind: 'crowd' });
     }
   }
   /* finish-line crowds */
   for (var f = 0; f < 3; f++) {
     var fs = findSegment((FINISH_SEG - 34 + f * 9) * SEG);
     if (fs) {
-      fs.sprites.push({ img: SPR.crowd[f % 2], offset: -1.3, w: 850, kind: 'crowd' });
-      fs.sprites.push({ img: SPR.crowd[(f + 1) % 2], offset: 1.3, w: 850, kind: 'crowd' });
+      fs.sprites.push({ img: SPR.crowd[f % 2], offset: -2.0, w: 850, kind: 'crowd' });
+      fs.sprites.push({ img: SPR.crowd[(f + 1) % 2], offset: 2.0, w: 850, kind: 'crowd' });
     }
   }
 }
@@ -2112,30 +2125,38 @@ function decorateTrack() {
     var s = segments[i];
     var z = ZONES[s.zone] || ZONES.country;
     var prog = i - START_SEG;
-    /* roadside walls: gates, driveways and field openings */
-    if (i > START_SEG + 30 && i < FINISH_SEG - 20 && R() < 0.012) s.gap = true;
-    /* trees and hedgerows */
-    if (i % 8 === 0) {
-      var den = z.tree;
-      if (R() < den * 0.95) {
-        var side = R() < 0.5 ? -1 : 1;
-        var img = SPR.trees[(R() * SPR.trees.length) | 0];
-        s.sprites.push({ img: img, offset: side * rr(2.2, 3.9), w: rr(1100, 1900), kind: 'tree' });
-      }
-      if (R() < den * 0.55) {
-        var side2 = R() < 0.5 ? -1 : 1;
-        s.sprites.push({ img: SPR.trees[(R() * SPR.trees.length) | 0], offset: side2 * rr(1.32, 2.15), w: rr(520, 1100), kind: 'tree' });
-      }
+    /* an open, wild Manx verge — grass, reeds, low scrub, no walls */
+    var sideA = R() < 0.5 ? -1 : 1;
+    if (i % 2 === 0) {
+      s.sprites.push({ img: SPR.grass[(R() * SPR.grass.length) | 0], offset: sideA * rr(1.012, 1.11), w: rr(120, 250), kind: 'grass' });
     }
-    /* low foliage right behind the wall and grass tufts on the verge */
-    if (i % 7 === 0 && R() < 0.42 && (s.zone === 'country' || s.zone === 'glen' || s.zone === 'mountain')) {
-      s.sprites.push({ img: SPR.bushes[(R() * SPR.bushes.length) | 0], offset: (R() < 0.5 ? -1 : 1) * rr(1.11, 1.3), w: rr(330, 760), kind: 'bush' });
+    if (i % 3 === 0 && R() < 0.8) {
+      s.sprites.push({ img: SPR.grass[(R() * SPR.grass.length) | 0], offset: -sideA * rr(1.03, 1.18), w: rr(110, 230), kind: 'grass' });
     }
-    if (i % 5 === 0 && s.zone !== 'town') {
-      s.sprites.push({ img: SPR.grass[(R() * SPR.grass.length) | 0], offset: (R() < 0.5 ? -1 : 1) * rr(0.99, 1.05), w: rr(180, 340), kind: 'grass' });
+    if (i % 2 === 1 && R() < 0.78) {
+      s.sprites.push({ img: SPR.wildflowers[(R() * SPR.wildflowers.length) | 0], offset: -sideA * rr(1.02, 1.2), w: rr(115, 235), kind: 'flowers' });
     }
-    if ((s.zone === 'mountain' || s.zone === 'coast') && i % 9 === 0 && R() < 0.5) {
-      s.sprites.push({ img: SPR.heather[(R() * SPR.heather.length) | 0], offset: (R() < 0.5 ? -1 : 1) * rr(1.2, 3.2), w: rr(320, 760), kind: 'heather' });
+    if (i % 4 === 0 && R() < 0.61) {
+      s.sprites.push({ img: SPR.bushes[(R() * SPR.bushes.length) | 0], offset: (R() < 0.5 ? -1 : 1) * rr(1.17, 1.92), w: rr(250, 620), kind: 'bush' });
+    }
+    if (i % 5 === 0 && R() < 0.45 && (s.zone === 'country' || s.zone === 'glen' || s.zone === 'mountain' || s.zone === 'coast')) {
+      s.sprites.push({ img: SPR.bushes[(R() * SPR.bushes.length) | 0], offset: (R() < 0.5 ? -1 : 1) * rr(1.05, 1.42), w: rr(190, 380), kind: 'bush' });
+    }
+    /* low, wind-cut trees instead of a hedge line */
+    if (i % 8 === 0 && R() < 0.7) {
+      var lowTreeSide = R() < 0.5 ? -1 : 1;
+      s.sprites.push({ img: SPR.lowTrees[(R() * SPR.lowTrees.length) | 0], offset: lowTreeSide * rr(2.15, 3.55), w: rr(390, 720), kind: 'tree' });
+    }
+    if (i % 10 === 0 && R() < 0.36 && s.zone !== 'town') {
+      var farTreeSide = R() < 0.5 ? -1 : 1;
+      s.sprites.push({ img: SPR.trees[(R() * SPR.trees.length) | 0], offset: farTreeSide * rr(2.7, 4.35), w: rr(600, 1050), kind: 'tree' });
+    }
+    /* heather and coarse upland grass */
+    if ((s.zone === 'mountain' || s.zone === 'coast') && i % 7 === 0 && R() < 0.55) {
+      s.sprites.push({ img: SPR.heather[(R() * SPR.heather.length) | 0], offset: (R() < 0.5 ? -1 : 1) * rr(1.22, 3.4), w: rr(300, 720), kind: 'heather' });
+    }
+    if (s.zone === 'glen' && i % 9 === 0 && R() < 0.45) {
+      s.sprites.push({ img: SPR.grass[(R() * SPR.grass.length) | 0], offset: (R() < 0.5 ? -1 : 1) * rr(1.2, 2.1), w: rr(240, 460), kind: 'grass' });
     }
     /* telegraph poles along the country / glen sections */
     if ((s.zone === 'country' || s.zone === 'glen' || s.zone === 'mountain' || s.zone === 'coast') && i - lastPole > 22 && R() < 0.62) {
@@ -2151,14 +2172,14 @@ function decorateTrack() {
     /* spectators / marshals near the village and start/finish */
     if ((s.zone === 'village' || (s.zone === 'town' && i > START_SEG && i < START_SEG + 240)) && i % 28 === 0 && R() < 0.55) {
       var side4 = R() < 0.5 ? -1 : 1;
-      s.sprites.push({ img: R() < 0.5 ? SPR.crowd[0] : SPR.crowd[1], offset: side4 * rr(1.24, 1.58), w: rr(450, 850), kind: 'crowd' });
+      s.sprites.push({ img: R() < 0.5 ? SPR.crowd[0] : SPR.crowd[1], offset: side4 * rr(1.92, 2.55), w: rr(450, 850), kind: 'crowd' });
     }
     if (i % 145 === 0 && R() < 0.5) {
-      s.sprites.push({ img: SPR.marshal, offset: (R() < 0.5 ? -1 : 1) * rr(1.28, 1.5), w: rr(260, 380), kind: 'marshal' });
+      s.sprites.push({ img: SPR.marshal, offset: (R() < 0.5 ? -1 : 1) * rr(2.05, 2.7), w: rr(260, 380), kind: 'marshal' });
     }
     /* chevron boards on fast corners */
-    if (Math.abs(s.curve) > 2.35 && i % 7 === 0 && R() < 0.7) {
-      s.sprites.push({ img: SPR.chevron, offset: (s.curve > 0 ? -1 : 1) * rr(1.22, 1.36), w: rr(550, 760), kind: 'chevron' });
+    if (Math.abs(s.curve) > 2.55 && i % 31 === 0 && R() < 0.58) {
+      s.sprites.push({ img: SPR.chevron, offset: (s.curve > 0 ? -1 : 1) * rr(1.55, 1.9), w: rr(300, 430), kind: 'chevron' });
     }
     /* mountain sheep, rocks and distance markers */
     if (s.zone === 'mountain' && i % 24 === 0 && R() < 0.3) {
@@ -2170,9 +2191,8 @@ function decorateTrack() {
     if (i % 185 === 0 && i > START_SEG + 120 && i < FINISH_SEG - 80) {
       s.sprites.push({ img: SPR.marker, offset: (R() < 0.5 ? -1 : 1) * 1.22, w: 190, kind: 'marker' });
     }
-    if (i % 17 === 0) {
-      s.sprites.push({ img: SPR.reflector, offset: -1.035, w: 72, kind: 'reflector' });
-      s.sprites.push({ img: SPR.reflector, offset: 1.035, w: 72, kind: 'reflector' });
+    if (i % 29 === 0) {
+      s.sprites.push({ img: SPR.reflector, offset: (i % 58 < 29 ? -1 : 1) * 1.055, w: 60, kind: 'reflector' });
     }
     /* lamp posts in town and finish village */
     if ((s.zone === 'town' || s.zone === 'village') && i % 34 === 0 && R() < 0.5) {
@@ -2275,6 +2295,52 @@ function makeGrass(seed) {
   return S.c;
 }
 
+function makeLowTree(seed) {
+  var R = mulberry32(seed);
+  function r(a, b) { return a + R() * (b - a); }
+  var S = spriteCanvas(480, 360), g = S.g;
+  /* short, twisted trunk */
+  g.strokeStyle = '#252a22'; g.lineWidth = 11;
+  g.beginPath(); g.moveTo(240, 356); g.quadraticCurveTo(228, 286, 238, 222); g.stroke();
+  g.strokeStyle = 'rgba(135,145,112,.15)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(238, 340); g.quadraticCurveTo(226, 286, 236, 235); g.stroke();
+  /* low, wide crown */
+  for (var i = 0; i < 54; i++) {
+    var a = r(0, TAU), x = 240 + Math.cos(a) * r(8, 172), y = 175 + Math.sin(a) * r(6, 98);
+    var rad = r(14, 64);
+    g.fillStyle = ['#1a2b1e','#223a27','#15261a','#2a4030','#31462d'][(R() * 5) | 0];
+    g.beginPath(); g.ellipse(x, y, rad, rad * r(0.54, 0.82), a, 0, TAU); g.fill();
+  }
+  /* sky holes + a little rim light */
+  for (var j = 0; j < 16; j++) {
+    g.fillStyle = 'rgba(136,157,103,.11)';
+    g.beginPath(); g.ellipse(240 + r(-160, 160), 165 + r(-75, 80), r(8, 28), r(4, 15), r(0, TAU), 0, TAU); g.fill();
+  }
+  g.fillStyle = 'rgba(4,8,5,.26)';
+  g.beginPath(); g.ellipse(240, 275, 155, 25, 0, 0, TAU); g.fill();
+  return S.c;
+}
+
+function makeWildflowers(seed) {
+  var R = mulberry32(seed);
+  var S = spriteCanvas(320, 170), g = S.g;
+  var petals = ['#e8d9a8','#f0c86a','#d9b0bf','#e7e3ca','#b7c9a0'];
+  for (var i = 0; i < 40; i++) {
+    var x = 18 + R() * 284, h = 22 + R() * 100;
+    var sway = (R() - 0.5) * 26;
+    g.strokeStyle = 'rgba(104,123,80,.48)';
+    g.lineWidth = 1.1 + R() * 1.2;
+    g.beginPath(); g.moveTo(x, 166); g.quadraticCurveTo(x + sway * 0.3, 166 - h * 0.55, x + sway, 166 - h); g.stroke();
+    if (R() < 0.56) {
+      g.fillStyle = petals[(R() * petals.length) | 0];
+      var fy = 166 - h, fx = x + sway;
+      g.beginPath(); g.arc(fx, fy, 1.8 + R() * 2.8, 0, TAU); g.fill();
+      if (R() < 0.35) { g.fillStyle = 'rgba(245,226,173,.5)'; g.beginPath(); g.arc(fx + R() * 4, fy - 3, 1.2, 0, TAU); g.fill(); }
+    }
+  }
+  return S.c;
+}
+
 function makeHouse(seed, stone) {
   var R = mulberry32(seed);
   function r(a, b) { return a + R() * (b - a); }
@@ -2370,6 +2436,8 @@ function makeChevron() {
     g.beginPath(); g.moveTo(58 + i * 61, 55); g.lineTo(110 + i * 61, 120); g.lineTo(58 + i * 61, 185); g.stroke();
   }
   g.fillStyle = '#292b27'; g.fillRect(58, 219, 204, 21);
+  /* post so the board does not float in the verge */
+  g.fillStyle = '#252720'; g.fillRect(145, 230, 24, 10);
   return S.c;
 }
 
@@ -2719,6 +2787,8 @@ function buildSprites() {
   SPR.houses = [makeHouse(101, false), makeHouse(202, true), makeHouse(303, false), makeHouse(404, true)];
   SPR.bushes = [makeBush(11), makeBush(22), makeBush(33), makeBush(44)];
   SPR.grass = [makeGrass(55), makeGrass(66), makeGrass(77)];
+  SPR.lowTrees = [makeLowTree(121), makeLowTree(232), makeLowTree(343), makeLowTree(454)];
+  SPR.wildflowers = [makeWildflowers(515), makeWildflowers(626), makeWildflowers(737)];
   SPR.pole = makePole();
   SPR.crowd = [makeCrowd(1), makeCrowd(2)];
   SPR.marshal = makeMarshal();
@@ -2960,13 +3030,15 @@ function findSegment(z) {
   return segments[i];
 }
 
-function project(p, camX, camY, camZ, horizon) {
+function project(p, camX, camY, camZ, horizon, refY) {
   p.cameraX = (p.world.x || 0) - camX;
-  p.cameraY = (p.world.y || 0) - camY;
+  var groundY = (refY === undefined) ? (camY - CAM_H) : refY;
+  var relY = (p.world.y || 0) - groundY;
+  p.cameraY = relY * ELEV_BOOST - CAM_H;
   p.cameraZ = p.world.z - camZ;
   p.scale = CAMERA_DEPTH / Math.max(1, p.cameraZ);
   p.screenX = W * 0.5 + p.scale * p.cameraX * W * 0.5;
-  p.screenY = horizon - p.scale * p.cameraY * H * 0.5;
+  p.screenY = horizon - p.scale * p.cameraY * H * 0.8;
   p.screenW = p.scale * ROAD_W * W * 0.5;
 }
 
@@ -2993,6 +3065,16 @@ function computeCamera() {
   };
 }
 
+function drawHaze(horizon) {
+  var top = Math.max(0, horizon - H * 0.08);
+  var hz = ctx.createLinearGradient(0, top, 0, horizon + H * 0.38);
+  hz.addColorStop(0, 'rgba(116,118,110,0.16)');
+  hz.addColorStop(0.32, 'rgba(87,100,91,0.10)');
+  hz.addColorStop(1, 'rgba(18,27,23,0)');
+  ctx.fillStyle = hz;
+  ctx.fillRect(0, top, W, H - top);
+}
+
 function drawWorld(cam) {
   var base = cam.baseSeg;
   var basePercent = cam.basePercent;
@@ -3006,8 +3088,8 @@ function drawWorld(cam) {
     seg = segments[(base.index + n) % segments.length];
     seg.visible = false;
     seg.fog = Math.exp(-4.9 * Math.pow(n / DRAW, 1.72));
-    project(seg.p1, camX - x, cam.camY, G.position, cam.horizon);
-    project(seg.p2, camX - x - dx, cam.camY, G.position, cam.horizon);
+    project(seg.p1, camX - x, cam.camY, G.position, cam.horizon, cam.camY - CAM_H);
+    project(seg.p2, camX - x - dx, cam.camY, G.position, cam.horizon, cam.camY - CAM_H);
     x += dx;
     dx += seg.curve;
     if (seg.p1.cameraZ <= CAMERA_DEPTH * 0.6) continue;
@@ -3021,7 +3103,7 @@ function drawWorld(cam) {
   /* far -> near so stone walls and hills occlude properly */
   for (var i = visible.length - 1; i >= 0; i--) {
     renderSegment(visible[i]);
-    drawWall(visible[i]);
+    drawVerge(visible[i]);
     drawFogBand(visible[i]);
     drawSegmentSprites(visible[i]);
     drawRivalsInSegment(visible[i]);
@@ -3035,8 +3117,8 @@ function renderSegment(seg) {
   if (h <= 0) return;
   var z = ZONES[seg.zone] || ZONES.country;
   var alt = seg.index % 2 === 0;
-  /* grass band */
-  var gg = alt ? z.grass1 : z.grass2;
+  /* grass band: one base tone so open fields do not look corduroyed */
+  var gg = z.grass1;
   ctx.fillStyle = gg;
   ctx.fillRect(0, y2 - 0.5, W, h + 1);
   /* verge strips between road and wall */
@@ -3152,13 +3234,7 @@ function renderSegment(seg) {
       ctx.fillRect(p1.screenX - edge1 * 0.3, y2, edge1 * 0.22, Math.max(1, h * 0.4));
     }
   }
-  /* distance / fog shading */
-  if (seg.fog < 0.99) {
-    ctx.globalAlpha = 1 - seg.fog;
-    ctx.fillStyle = (ZONES[seg.zone] || ZONES.country).fog;
-    ctx.fillRect(0, y2, W, h + 0.5);
-    ctx.globalAlpha = 1;
-  }
+
 }
 
 function wallScreen(p, side, offset) {
@@ -3282,6 +3358,61 @@ function drawWall(seg) {
   }
 }
 
+function drawVerge(seg) {
+  var p1 = seg.p1, p2 = seg.p2;
+  var e1 = p1.screenW, e2 = p2.screenW;
+  if (e1 < 1.2 || e2 < 1.2) return;
+  var z = ZONES[seg.zone] || ZONES.country;
+  var fogT = clamp(1 - seg.fog, 0, 1) * 0.86;
+  var side;
+  for (side = -1; side <= 1; side += 2) {
+    /* thin dirt/gravel lip right outside the white line */
+    var soil = mixColor(z.verge, z.fog, fogT);
+    poly(ctx,
+      p1.screenX + side * e1 * 1.012, p1.screenY,
+      p1.screenX + side * e1 * 1.058, p1.screenY,
+      p2.screenX + side * e2 * 1.058, p2.screenY,
+      p2.screenX + side * e2 * 1.012, p2.screenY, soil);
+    /* rough tussocky grass edge */
+    var edgeGrass = mixColor(z.grass1, z.grass2, 0.35 + (seg.index % 3) * 0.08);
+    poly(ctx,
+      p1.screenX + side * e1 * 1.055, p1.screenY,
+      p1.screenX + side * e1 * 1.23, p1.screenY,
+      p2.screenX + side * e2 * 1.23, p2.screenY,
+      p2.screenX + side * e2 * 1.055, p2.screenY, edgeGrass);
+    /* a dark grassy ditch, the only thing between you and the fields */
+    if (seg.index % 9 !== 0) {
+      ctx.globalAlpha = 0.42;
+      poly(ctx,
+        p1.screenX + side * e1 * 1.21, p1.screenY,
+        p1.screenX + side * e1 * 1.32, p1.screenY,
+        p2.screenX + side * e2 * 1.32, p2.screenY,
+        p2.screenX + side * e2 * 1.21, p2.screenY, '#141d15');
+      ctx.globalAlpha = 1;
+    }
+    /* open meadow shoulder beyond the ditch */
+    var meadow = mixColor(z.grass2, z.grass1, 0.28 + (seg.index % 2) * 0.08);
+    poly(ctx,
+      p1.screenX + side * e1 * 1.30, p1.screenY,
+      p1.screenX + side * e1 * 1.72, p1.screenY,
+      p2.screenX + side * e2 * 1.72, p2.screenY,
+      p2.screenX + side * e2 * 1.30, p2.screenY, meadow);
+    /* rough grass highlights on the nearest verges */
+    if (p1.screenW > 52) {
+      ctx.strokeStyle = 'rgba(130,145,101,.14)';
+      ctx.lineWidth = Math.max(0.7, p1.screenW * 0.004);
+      for (var k = 0; k < 2; k++) {
+        var gx = p1.screenX + side * e1 * (1.08 + k * 0.08);
+        var gy = p1.screenY - (k % 2) * 2;
+        ctx.beginPath();
+        ctx.moveTo(gx, gy);
+        ctx.lineTo(gx + side * e1 * 0.025, gy - Math.max(2, e1 * 0.02));
+        ctx.stroke();
+      }
+    }
+  }
+}
+
 function drawFogBand(seg) {
   /* fog is already applied in renderSegment; this adds atmosphere to walls/sprites */
 }
@@ -3303,6 +3434,7 @@ function drawWorldSprite(seg, s) {
   if (destH > H * 2.6) return;
   /* avoid giant clipped billboards when a roadside object is right beside us */
   if (s.kind !== 'gantry' && (destW > W * 0.82 || destH > H * 1.18)) return;
+  if (s.kind === 'chevron' && destW > W * 0.27) return;
   var destX = p.screenX + p.scale * s.offset * ROAD_W * W * 0.5 - destW * 0.5;
   var destY = p.screenY - destH + (s.kind === 'gantry' ? 0 : 0);
   if (destX > W * 1.35 || destX + destW < -W * 0.35) return;
@@ -3339,6 +3471,8 @@ function drawRival(seg, r) {
   var destW = 400 * p.scale * W * 0.5;
   if (destW < 2) return;
   var destH = destW * (img.height / img.width);
+  /* do not draw a gigantic clipped rider when a rival is right beside the camera */
+  if (destW > W * 0.40 || destH > H * 0.68) return;
   var x = p.screenX + p.scale * r.offset * ROAD_W * W * 0.5;
   var y = p.screenY;
   if (x + destW < -W * 0.2 || x - destW > W * 1.2) return;
@@ -3485,23 +3619,82 @@ function buildCockpit() {
   g.strokeStyle = 'rgba(194,209,199,.2)'; g.lineWidth = 1;
   g.beginPath(); g.ellipse(cx, h * 0.64, W * 0.028, h * 0.017, 0, 0, TAU); g.stroke();
 
-  /* --- little windscreen / dash brow --- */
-  g.strokeStyle = 'rgba(197,215,205,.12)'; g.lineWidth = 1.4;
+  /* --- compact curved racing bubble screen --- */
+  var wsL = W * 0.225;
+  function screenPath() {
+    g.beginPath();
+    g.moveTo(cx - wsL, h * 0.545);
+    g.bezierCurveTo(cx - W * 0.205, h * 0.35, cx - W * 0.105, h * 0.205, cx, h * 0.175);
+    g.bezierCurveTo(cx + W * 0.105, h * 0.205, cx + W * 0.205, h * 0.35, cx + wsL, h * 0.545);
+    g.closePath();
+  }
+  var glass = g.createLinearGradient(0, h * 0.16, 0, h * 0.56);
+  glass.addColorStop(0, 'rgba(176,203,196,0.085)');
+  glass.addColorStop(0.35, 'rgba(88,121,117,0.045)');
+  glass.addColorStop(0.68, 'rgba(18,34,32,0.075)');
+  glass.addColorStop(1, 'rgba(3,8,8,0.31)');
+  g.fillStyle = glass;
+  screenPath(); g.fill();
+  /* dark screen frame then a restrained bright lip */
+  g.strokeStyle = 'rgba(5,10,10,.62)'; g.lineWidth = 4.5;
+  screenPath(); g.stroke();
+  g.save();
+  g.strokeStyle = 'rgba(225,238,228,.27)';
+  g.lineWidth = 1.8;
   g.beginPath();
-  g.moveTo(cx - W * 0.23, h * 0.42);
-  g.quadraticCurveTo(cx - W * 0.14, h * 0.285, cx, h * 0.25);
-  g.quadraticCurveTo(cx + W * 0.14, h * 0.285, cx + W * 0.23, h * 0.42);
+  g.moveTo(cx - wsL, h * 0.545);
+  g.bezierCurveTo(cx - W * 0.205, h * 0.35, cx - W * 0.105, h * 0.205, cx, h * 0.175);
+  g.bezierCurveTo(cx + W * 0.105, h * 0.205, cx + W * 0.205, h * 0.35, cx + wsL, h * 0.545);
   g.stroke();
-  var smoke = g.createLinearGradient(0, h * 0.18, 0, h * 0.5);
-  smoke.addColorStop(0, 'rgba(168,195,192,0.015)');
-  smoke.addColorStop(0.55, 'rgba(20,35,35,0.055)');
-  smoke.addColorStop(1, 'rgba(3,7,7,0.16)');
-  g.fillStyle = smoke;
+  g.restore();
+  /* soft sky/road reflection down the left half */
+  g.save();
+  screenPath(); g.clip();
+  var sweep = g.createLinearGradient(cx - wsL, h * 0.22, cx + wsL * 0.4, h * 0.52);
+  sweep.addColorStop(0, 'rgba(226,240,232,.065)');
+  sweep.addColorStop(0.45, 'rgba(226,240,232,.015)');
+  sweep.addColorStop(1, 'rgba(226,240,232,0)');
+  g.fillStyle = sweep;
   g.beginPath();
-  g.moveTo(cx - W * 0.205, h * 0.43);
-  g.quadraticCurveTo(cx - W * 0.13, h * 0.27, cx, h * 0.235);
-  g.quadraticCurveTo(cx + W * 0.13, h * 0.27, cx + W * 0.205, h * 0.43);
+  g.moveTo(cx - wsL, h * 0.53);
+  g.lineTo(cx - W * 0.19, h * 0.20);
+  g.lineTo(cx - W * 0.05, h * 0.17);
+  g.lineTo(cx - W * 0.09, h * 0.53);
   g.closePath(); g.fill();
+  /* two short reflection slashes, not a full halo */
+  g.strokeStyle = 'rgba(218,235,225,.14)'; g.lineWidth = 1.2;
+  g.beginPath();
+  g.moveTo(cx - W * 0.195, h * 0.44);
+  g.quadraticCurveTo(cx - W * 0.16, h * 0.31, cx - W * 0.075, h * 0.235);
+  g.stroke();
+  g.strokeStyle = 'rgba(218,235,225,.075)'; g.lineWidth = 2.2;
+  g.beginPath();
+  g.moveTo(cx + W * 0.055, h * 0.22);
+  g.quadraticCurveTo(cx + W * 0.135, h * 0.29, cx + W * 0.185, h * 0.43);
+  g.stroke();
+  /* rain beads on the screen */
+  var bead = [[-0.12,0.28,1.6],[-0.05,0.22,1.2],[0.09,0.25,1.5],[0.15,0.35,1.9],[0.03,0.20,1.0]];
+  for (var bd = 0; bd < bead.length; bd++) {
+    var bx = cx + W * bead[bd][0], by = h * bead[bd][1], br = bead[bd][2];
+    g.fillStyle = 'rgba(5,12,12,.22)';
+    g.beginPath(); g.ellipse(bx, by, br * 0.8, br, 0, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(218,236,226,.26)';
+    g.beginPath(); g.ellipse(bx - br * 0.24, by - br * 0.3, br * 0.3, br * 0.48, 0, 0, TAU); g.fill();
+  }
+  g.restore();
+  /* screen brackets */
+  g.fillStyle = 'rgba(14,20,19,.9)';
+  [-1, 1].forEach(function (side) {
+    g.beginPath();
+    g.moveTo(cx + side * wsL, h * 0.54);
+    g.lineTo(cx + side * wsL * 1.03, h * 0.54);
+    g.lineTo(cx + side * wsL * 1.01, h * 0.60);
+    g.lineTo(cx + side * wsL * 0.96, h * 0.60);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(201,244,54,.42)';
+    g.beginPath(); g.arc(cx + side * wsL * 0.995, h * 0.555, 1.5, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(14,20,19,.9)';
+  });
 
   /* --- dashboard pod --- */
   var dx = cx - dashW / 2, dy = dashY - dashH / 2;
@@ -4207,10 +4400,15 @@ function updateRace(dt) {
   G.playerX -= seg.curve * sp * sp * 0.52 * dt;
   if (G.tuck) G.playerX -= seg.curve * sp * sp * 0.07 * dt;
   var oldX = G.playerX;
-  G.playerX = clamp(G.playerX, -1.24, 1.24);
+  G.playerX = clamp(G.playerX, -1.50, 1.50);
 
   /* off-road rumble / gravel */
   var off = Math.abs(G.playerX) > 1.0;
+  if (off && !G.wasOff && sp > 0.18) {
+    showCallout('OFF LINE', 'GRASS SHOULDER · GET BACK ON THE TARMAC', 'bad', 1.2);
+    G.shake = Math.max(G.shake, 0.5);
+  }
+  G.wasOff = off;
   if (off) {
     G.shake = Math.max(G.shake, 0.28 + sp * 0.5);
     G.flash = Math.max(G.flash, 0.08);
@@ -4223,30 +4421,28 @@ function updateRace(dt) {
   }
   if (G.speed < 0) G.speed = 0;
 
-  /* stone wall impact */
-  if (Math.abs(G.playerX) >= 1.13) {
+  /* ditch / grass bank edge: no wall, but no free lunch either */
+  if (Math.abs(G.playerX) >= 1.32) {
     var side = Math.sign(G.playerX);
-    var hard = sp > 0.66 || (sp > 0.52 && (Math.abs(G.lateralVel) > 0.14 || Math.abs(G.steerSmooth) > 0.38));
-    if (hard) {
-      triggerCrash('STONE WALL / ' + (landmarks[nearestLandmarkIndex()] || {name:'MOUNTAIN'}).name + ' / ' + Math.round(G.speed * KMH_SCALE) + ' KM/H');
+    if (sp > 0.42) {
+      triggerCrash('GRASS BANK / ' + (landmarks[nearestLandmarkIndex()] || {name:'MOUNTAIN'}).name + ' / ' + Math.round(G.speed * KMH_SCALE) + ' KM/H');
       return;
     }
-    G.playerX = side * 1.115;
-    G.lateralVel = -side * 0.85;
-    G.speed *= 0.78;
-    G.shake = Math.max(G.shake, 0.85);
-    G.flash = Math.max(G.flash, 0.7);
-    G.hitCooldown = 0.85;
-    spawnSparks(side, 0.7);
-    Audio.crash(0.28);
+    G.playerX = side * 1.285;
+    G.lateralVel = -side * 0.55;
+    G.speed *= 0.66;
+    G.shake = Math.max(G.shake, 0.75);
+    G.flash = Math.max(G.flash, 0.55);
+    G.hitCooldown = 0.8;
+    spawnDust(side);
     Audio.near();
-    showCallout('WALL GRAZE', 'EASE OFF · ' + Math.round(G.speed * KMH_SCALE) + ' KM/H', 'bad', 1.25);
+    showCallout('OFF LINE', 'GRASS BANK · ' + Math.round(G.speed * KMH_SCALE) + ' KM/H', 'bad', 1.2);
   }
 
-  /* near wall / redline danger feedback */
-  var wallProx = clamp((Math.abs(G.playerX) - 0.88) / 0.24, 0, 1) * clamp(sp, 0, 1);
+  /* grass shoulder / ditch warning */
+  var vergeProx = clamp((Math.abs(G.playerX) - 0.78) / 0.4, 0, 1) * clamp(sp, 0, 1);
   var redline = clamp((G.rpm - 13600) / 1000, 0, 1);
-  G.danger = Math.max(wallProx, redline * 0.55);
+  G.danger = Math.max(vergeProx, redline * 0.55);
 
   /* close call: edge line, high speed, clean */
   if (G.nearCooldown > 0) G.nearCooldown -= dt;
@@ -4257,13 +4453,6 @@ function updateRace(dt) {
     showCallout('MILLIMETRES', 'CLOSE CALL · ' + Math.round(G.speed * KMH_SCALE) + ' KM/H', 'good', 1.15);
   }
 
-  /* jump / Ballaugh crest */
-  if (G.jumpRange && !G.jumpDone) {
-    if (G.position + PLAYER_Z >= START_SEG * SEG + G.jumpRange.start * SEG * 0 &&
-        G.position / SEG > G.jumpRange.start && G.speed > MAX_SPEED * 0.48) {
-      /* jumpRange stored relative to plan start; add START offset */
-    }
-  }
   updateJump(dt);
 
   /* collision with rivals */
@@ -4296,7 +4485,7 @@ function updateRace(dt) {
 
 function updateJump(dt) {
   /* jump at Ballaugh Bridge: lift the camera as the road drops away */
-  var jumpSeg = START_SEG + 1160;   // roughly the bridge landing, tuned to the plan
+  var jumpSeg = G.jumpRange ? (G.jumpRange.start + 20) : (START_SEG + 1160);
   var dist = Math.abs((G.position / SEG) - jumpSeg);
   if (G.state === 'race' && !G.jumpDone && G.speed > MAX_SPEED * 0.52 && dist < 38) {
     G.jumpDone = true;
@@ -4344,7 +4533,8 @@ function triggerCrash(reason) {
   G.shake = 1.6;
   G.flash = 1;
   G.danger = 1;
-  spawnSparks(G.playerX >= 0 ? 1 : -1, 1.2);
+  if (reason && reason.indexOf('GRASS') === 0) { spawnDust(G.playerX >= 0 ? 1 : -1); spawnDust(G.playerX >= 0 ? 1 : -1); }
+  else { spawnSparks(G.playerX >= 0 ? 1 : -1, 1.2); }
   Audio.crash(1);
   ui.hud.classList.remove('live');
   ui.touch.style.display = 'none';
@@ -4497,7 +4687,7 @@ function updateCountdown(dt) {
       showCountdown(String(n), n === 3 ? 'HOLD THROTTLE' : 'COMMIT');
       Audio.beep();
     } else {
-      showCountdown('GO', 'NO RUN-OFF');
+      showCountdown('GO', 'NO BARRIERS');
       Audio.beep();
       G.state = 'race';
       G.launchT = 0;
@@ -4639,6 +4829,7 @@ function resetRace() {
   G.hitCooldown = 0;
   G.nearCooldown = 0;
   G.distance = 0;
+  G.wasOff = false;
   G.crashT = 0;
   G.calls = [];
   G.keys = { throttle:false, brake:false, left:false, right:false, tuck:false };
@@ -4796,6 +4987,7 @@ function render() {
   drawSky(cam.horizon);
   drawWorld(cam);
   ctx.restore();
+  drawHaze(cam.horizon);
 
   /* screen-space effects */
   drawSpeedFX(1 / 60, speedF);
@@ -5080,7 +5272,7 @@ window.REDLINE = {
     var base = G.distance;
     rivals.forEach(function (r, i) {
       r.finished = false;
-      r.dist = base + 420 + i * 780;
+      r.dist = base + 6500 + i * 2800;
       r.speed = G.speed * (0.9 + i * 0.02);
       r.targetSpeed = r.speed;
       r.offset = [-0.32, 0.24, -0.1, 0.38][i];
