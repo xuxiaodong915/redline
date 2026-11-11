@@ -1852,7 +1852,7 @@ var PRE_SEG = 180;
 var RACE_SEGMENTS = 4910;
 var FINISH_SEG = PRE_SEG + RACE_SEGMENTS;
 var RACE_DISTANCE = (FINISH_SEG - START_SEG) * SEG;
-var GEAR_TOP_KMH = [96, 137, 179, 218, 261, 318];
+var GEAR_TOP_KMH = [96, 137, 179, 218, 261, 326];  // tall top gear for the tuck run, avoids limiter flutter
 
 var ZONES = {
   town:     { grass1:'#1c2a22', grass2:'#1b2821', verge:'#343227', fog:'#5d5b52', road1:'#343738', road2:'#313536', tree:0.15, wallH:500, sky:'#7c6c5c' },
@@ -3619,32 +3619,42 @@ function buildCockpit() {
   g.strokeStyle = 'rgba(194,209,199,.2)'; g.lineWidth = 1;
   g.beginPath(); g.ellipse(cx, h * 0.64, W * 0.028, h * 0.017, 0, 0, TAU); g.stroke();
 
-  /* --- compact curved racing bubble screen --- */
-  var wsL = W * 0.225;
+  /* --- tall curved racing bubble screen --- */
+  var wsL = W * 0.232;
   function screenPath() {
     g.beginPath();
     g.moveTo(cx - wsL, h * 0.545);
-    g.bezierCurveTo(cx - W * 0.205, h * 0.35, cx - W * 0.105, h * 0.205, cx, h * 0.175);
-    g.bezierCurveTo(cx + W * 0.105, h * 0.205, cx + W * 0.205, h * 0.35, cx + wsL, h * 0.545);
+    g.bezierCurveTo(cx - W * 0.218, h * 0.30, cx - W * 0.118, h * 0.145, cx, h * 0.062);
+    g.bezierCurveTo(cx + W * 0.118, h * 0.145, cx + W * 0.218, h * 0.30, cx + wsL, h * 0.545);
     g.closePath();
   }
   var glass = g.createLinearGradient(0, h * 0.16, 0, h * 0.56);
-  glass.addColorStop(0, 'rgba(176,203,196,0.085)');
+  glass.addColorStop(0, 'rgba(176,203,196,0.12)');
   glass.addColorStop(0.35, 'rgba(88,121,117,0.045)');
   glass.addColorStop(0.68, 'rgba(18,34,32,0.075)');
   glass.addColorStop(1, 'rgba(3,8,8,0.31)');
   g.fillStyle = glass;
   screenPath(); g.fill();
+  /* smoked band under the top lip */
+  g.save();
+  screenPath(); g.clip();
+  g.strokeStyle = 'rgba(4,10,9,.46)'; g.lineWidth = 11;
+  g.beginPath();
+  g.moveTo(cx - wsL, h * 0.545);
+  g.bezierCurveTo(cx - W * 0.218, h * 0.30, cx - W * 0.118, h * 0.145, cx, h * 0.062);
+  g.bezierCurveTo(cx + W * 0.118, h * 0.145, cx + W * 0.218, h * 0.30, cx + wsL, h * 0.545);
+  g.stroke();
+  g.restore();
   /* dark screen frame then a restrained bright lip */
   g.strokeStyle = 'rgba(5,10,10,.62)'; g.lineWidth = 4.5;
   screenPath(); g.stroke();
   g.save();
-  g.strokeStyle = 'rgba(225,238,228,.27)';
+  g.strokeStyle = 'rgba(225,238,228,.34)';
   g.lineWidth = 1.8;
   g.beginPath();
   g.moveTo(cx - wsL, h * 0.545);
-  g.bezierCurveTo(cx - W * 0.205, h * 0.35, cx - W * 0.105, h * 0.205, cx, h * 0.175);
-  g.bezierCurveTo(cx + W * 0.105, h * 0.205, cx + W * 0.205, h * 0.35, cx + wsL, h * 0.545);
+  g.bezierCurveTo(cx - W * 0.218, h * 0.30, cx - W * 0.118, h * 0.145, cx, h * 0.062);
+  g.bezierCurveTo(cx + W * 0.118, h * 0.145, cx + W * 0.218, h * 0.30, cx + wsL, h * 0.545);
   g.stroke();
   g.restore();
   /* soft sky/road reflection down the left half */
